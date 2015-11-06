@@ -1,0 +1,80 @@
+uniform sampler sMotionMask, sLabel, sGroundTruth;
+uniform float4 vDisplay;
+
+float4 ViewThreshold(float2 vTex : TEXCOORD0) : COLOR
+{
+	float4 pixel, result;
+
+	pixel = tex2D(sMotionMask, vTex);
+
+	if ( vDisplay.a == 0 )
+		result = pixel;
+	else if ( vDisplay.a == 1 )
+		result = pixel.a;
+	else if ( vDisplay.a == 2 )
+		result = pixel.a > vDisplay.r ? 1 : 0;
+	else if ( vDisplay.a == 3 )
+		result = pixel.a < vDisplay.g ? 0 : pixel.a > vDisplay.b ? 1 : .5;
+
+	result.a = 1;
+	return result;
+}
+
+float4 ViewGraphCuts(float2 vTex : TEXCOORD0) : COLOR
+{
+	float4 pixel, graph, result;
+
+	pixel = tex2D(sMotionMask, vTex);
+	graph = tex2D(sLabel, vTex);
+
+	if ( vDisplay.a == 0 )
+		result = pixel;
+	else if ( vDisplay.a == 1 )
+		result = pixel.a;
+	else if ( vDisplay.a == 2 )
+		result = graph.a > vDisplay.r ? 1 : 0;
+	else if ( vDisplay.a == 3 )
+		result = graph.a > vDisplay.r ? pixel : 1;
+
+	result.a = 1;
+	return result;
+}
+
+float4 ViewDynamicProg(float2 vTex : TEXCOORD0) : COLOR
+{
+	float4 pixel, label, result;
+
+	pixel = tex2D(sMotionMask, vTex);
+	label = tex2D(sLabel, vTex);
+
+	if ( vDisplay.a == 0 )
+		result = pixel;
+	else if ( vDisplay.a == 1 )
+		result = pixel.a;
+	else if ( vDisplay.a == 2 )
+		result = label.b > 0 ? label.r : 0;
+	else if ( vDisplay.a == 3 )
+		result = label.r*label.b > 0 ? pixel : 1;
+
+	result.a = 1;
+	return result;
+}
+
+float4 EvaluateMask(float2 vTex : TEXCOORD0) : COLOR
+{
+	float4 pixel, result;
+	float local, reliable, mask, truth;
+
+	pixel = tex2D(sMotionMask, vTex);
+	truth = tex2D(sGroundTruth, vTex).r;
+	local = pixel.a > vDisplay.r ? 1 : 0;
+	reliable = pixel.r*pixel.b > 0 ? 1 : 0;
+	mask = vDisplay.a > 0 ? reliable : local;
+
+	result.r = mask * truth;
+	result.g = 1 - mask - truth;
+	result.b = mask - truth;
+	result.a = truth - mask;
+
+	return result;
+}

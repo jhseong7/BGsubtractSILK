@@ -1,0 +1,70 @@
+uniform sampler sPushFlow, sLabelExcess, sResidual;	
+uniform float2 vStepX, vStepY;
+uniform float vPushDir;
+
+void PushFlow(float2 vTex : TEXCOORD0, out float4 push: COLOR0)
+{
+	float4 neighbor, diff;
+
+	float4 pixel = tex2D(sLabelExcess, vTex);
+	float4 residual = tex2D(sResidual, vTex);
+	float tosource = pixel.r;
+	float tosink = pixel.g;
+	float excess = pixel.b;
+	float label = pixel.a;
+
+	neighbor.x = tex2D(sLabelExcess, vTex-vStepX).a;
+	neighbor.y = tex2D(sLabelExcess, vTex-vStepY).a;
+	neighbor.z = tex2D(sLabelExcess, vTex+vStepX).a;
+	neighbor.w = tex2D(sLabelExcess, vTex+vStepY).a;
+	diff = abs(label - neighbor.xyzw - 1/255.f);
+
+	excess -= min(excess, tosink);
+	if ( vPushDir.r > 0 )
+		excess -= min(excess, tosource);
+	for ( int i=0; i<4; i++ )
+	{
+		if ( diff[i] < .5/255.f )
+			push[i] = min(residual[i], excess);
+		else
+			push[i] = 0;
+		excess -= push[i];
+	}
+}
+
+void UpdateExcessResidual(float2 vTex : TEXCOORD0,
+	out float4 label_excess: COLOR0, out float4 residual: COLOR1)
+{
+	float4 neighbor, in_flow, out_flow;
+	float temp, min_label;
+
+	label_excess = tex2D(sLabelExcess, vTex);
+	residual = tex2D(sResidual, vTex);
+
+	out_flow = tex2D(sPushFlow, vTex);
+	in_flow.x = tex2D(sPushFlow, vTex-vStepX).z;
+	in_flow.y = tex2D(sPushFlow, vTex-vStepY).w;
+	in_flow.z = tex2D(sPushFlow, vTex+vStepX).x;
+	in_flow.w = tex2D(sPushFlow, vTex+vStepY).y;
+
+	temp = min(label_excess.b, label_excess.g);
+	label_excess.bg -= temp;
+	temp = min(label_excess.b, label_excess.r);
+	if ( vPushDir.r > 0 )
+		label_excess.br -= temp;
+	label_excess.b -= dot(out_flow, 1);
+	residual += in_flow - out_flow;
+
+	neighbor.x = tex2D(sLabelExcess, vTex-vStepX).a;
+	neighbor.y = tex2D(sLabelExcess, vTex-vStepY).a;
+	neighbor.z = tex2D(sLabelExcess, vTex+vStepX).a;
+	neighbor.w = tex2D(sLabelExcess, vTex+vStepY).a;
+	neighbor = residual > 0 ? neighbor : 1.f;
+
+	min_label = min(min(neighbor.x, neighbor.y),
+		min(neighbor.z, neighbor.w)) + 1/255.f;
+
+	if ( label_excess.b > 0 )
+		label_excess.a = min_label;
+	label_excess.b += dot(in_flow, 1);
+}

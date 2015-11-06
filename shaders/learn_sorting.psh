@@ -1,0 +1,33 @@
+uniform sampler sPrevMemory, sNewFrame;
+uniform float2 vCurrent, vPrevious, vRepeat;
+uniform float vDamping;
+
+float4 InsertMost(float2 vTex : TEXCOORD0) : COLOR
+{
+	float4 cur = tex2D(sPrevMemory, vTex + vCurrent);
+	float4 prev = tex2D(sPrevMemory, vTex + vPrevious);
+	float4 pixel = tex2D(sNewFrame, vTex * vRepeat);
+
+	cur.a *= vDamping;
+	prev.a *= vDamping;
+
+	if ( cur.a > pixel.a )
+		return cur;
+	else if ( prev.a > pixel.a )
+		return pixel;
+	else
+		return prev;
+}
+
+float4 InsertLast(float2 vTex : TEXCOORD0) : COLOR
+{
+	float4 cur = tex2D(sPrevMemory, vTex);
+	float4 pixel = tex2D(sNewFrame, vTex * vRepeat);
+
+	cur.a *= vDamping;
+
+	if ( cur.a > pixel.a )
+		return cur;
+	else
+		return pixel;
+}

@@ -1,0 +1,52 @@
+uniform sampler sNewFrame, sMask;
+uniform float4 vThreshold;
+uniform float2 vStep;
+
+float4 ComputeNodeWeight(float2 vTex : TEXCOORD0) : COLOR
+{
+	float4 pixel = tex2D(sNewFrame, vTex);
+	float4 label = tex2D(sMask, vTex);
+
+//	float bound = label.r > 0 ? vThreshold.g : vThreshold.r;
+	float bound = label.a > vThreshold.a ? vThreshold.g : vThreshold.r;
+	pixel.a = min(bound, pixel.a) / vThreshold.r;
+
+	return pixel;
+}
+
+float4 ComputeEdgeWeight(float2 vTex : TEXCOORD0) : COLOR
+{
+	float4 pixel = tex2D(sNewFrame, vTex);
+	float4 label0 = tex2D(sMask, vTex);
+	float4 label1 = tex2D(sMask, vTex + vStep);
+
+//	float bound = label0.r*label1.r > 0 ? vThreshold.g : vThreshold.r;
+	float bound = (label0.a > vThreshold.a && label1.a > vThreshold.a)
+		? vThreshold.g : vThreshold.r;
+	pixel.a = min(bound, pixel.a) / vThreshold.r;
+
+	return pixel;
+}
+
+float4 ComputeNodeCost(float2 vTex : TEXCOORD0) : COLOR
+{
+	float score = tex2D(sNewFrame, vTex).a;
+	float4 result = 0;
+
+	result.r = (1 - score);
+	result.g = score;
+
+	return result;
+}
+
+float4 ComputeEdgeCost(float2 vTex : TEXCOORD0) : COLOR
+{
+	float4 pixel = tex2D(sNewFrame, vTex);
+	float4 cost = 0;
+
+	cost.r = pixel.a / 3;
+	cost.gb = 1;
+//cost = float4(0, 1, 1, 0);
+
+	return cost;
+}

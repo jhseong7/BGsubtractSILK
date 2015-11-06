@@ -1,0 +1,80 @@
+uniform sampler sLossNode, sLossEdge;
+uniform float vThreshold;
+uniform float2 vStepX, vStepY, vStepXY;
+
+void InitExcessResidual(float2 vTex : TEXCOORD0,
+	out float4 label_excess: COLOR0, out float4 residual: COLOR1)
+{
+	float4 pixel = tex2D(sLossNode, vTex);
+	float4 top = tex2D(sLossNode, vTex-vStepY);
+	float4 left = tex2D(sLossNode, vTex-vStepX);
+	float4 right = tex2D(sLossNode, vTex+vStepX);
+	float4 bottom = tex2D(sLossNode, vTex+vStepY);
+
+	float loss = pixel.a / 2 + (top.a + left.a + right.a + bottom.a) / 8;
+	loss = clamp(loss, vThreshold-.35, vThreshold+.05);
+	label_excess.r = loss - (vThreshold-.35);	// residual to source
+
+	float loss2 = tex2D(sLossEdge, vTex);
+	loss2 = clamp(loss2 - .75, -.25, .25);
+	label_excess.g = (vThreshold+.05) - loss;	// residual to sink
+	label_excess.b = label_excess.r;		// excess
+	label_excess.a = 0;						// label
+
+	float4 color_diff;
+
+	color_diff.x = dot(abs(pixel-left).rgb, .3333);
+	color_diff.y = dot(abs(pixel-top).rgb, .3333);
+	color_diff.z = dot(abs(pixel-right).rgb, .3333);
+	color_diff.w = dot(abs(pixel-bottom).rgb, .3333);
+
+	residual = .2 - min(color_diff, .05);
+	residual.xy = vTex-vStepXY < 0 ? 0 : residual.xy;
+	residual.zw = vTex+vStepXY > 1 ? 0 : residual.zw;
+}
+
+void InitNodeEdgeCost(float2 vTex : TEXCOORD0,
+	out float4 node_cost: COLOR0, out float4 edge_cost: COLOR1)
+{
+	float loss;
+
+	loss = tex2D(sLossNode, vTex).a;
+	node_cost.r = loss - vThreshold + .8;		// b
+	node_cost.g = vThreshold - loss + .2;		// f
+	node_cost.ba = 0;
+
+	loss = tex2D(sLossEdge, vTex).a;
+	edge_cost.r = loss / 3;			// ff
+	edge_cost.gb = 1;				// fb, bf
+	edge_cost.a = 0;				// bb
+}
+/*
+
+void InitExcessResidual(float2 vTex : TEXCOORD0,
+	out float4 label_excess: COLOR0, out float4 residual: COLOR1)
+{
+	float4 pixel = tex2D(sLossNode, vTex);
+	float4 top = tex2D(sLossNode, vTex-vStepY);
+	float4 left = tex2D(sLossNode, vTex-vStepX);
+	float4 right = tex2D(sLossNode, vTex+vStepX);
+	float4 bottom = tex2D(sLossNode, vTex+vStepY);
+
+	float loss = pixel.a / 2 + (top.a + left.a + right.a + bottom.a) / 8;
+	loss = clamp(loss, vThreshold-.35, vThreshold+.05);
+	label_excess.r = loss - (vThreshold-.35);	// residual to source
+	label_excess.g = (vThreshold+.05) - loss;	// residual to sink
+	label_excess.b = label_excess.r;		// excess
+	label_excess.a = 0;						// label
+
+	float4 color_diff;
+
+	color_diff.x = dot(abs(pixel-left).rgb, .3333);
+	color_diff.y = dot(abs(pixel-top).rgb, .3333);
+	color_diff.z = dot(abs(pixel-right).rgb, .3333);
+	color_diff.w = dot(abs(pixel-bottom).rgb, .3333);
+
+	residual = .2 - min(color_diff, .05);
+	residual.xy = vTex-vStepXY < 0 ? 0 : residual.xy;
+	residual.zw = vTex+vStepXY > 1 ? 0 : residual.zw;
+}
+*/

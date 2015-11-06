@@ -1,0 +1,78 @@
+uniform sampler sPrevMemory, sNewFrame;
+uniform float2 vOffsets[50], vRepeat;
+uniform float4 vThreshold;
+
+float4 Combination10(float2 vTex : TEXCOORD0) : COLOR
+{
+	float4 pixel = tex2D(sNewFrame, vTex*vRepeat);
+	pixel.a = 0;
+	for ( int i=0; i<10; i++ )
+	{
+		float4 prev = tex2D(sPrevMemory, vTex + vOffsets[i]);
+		float3 diff = prev.rgb - pixel.rgb;
+		pixel.a += prev.a * exp(-500 * dot(diff, diff) / 3);
+	}
+	pixel.a = 1 - pixel.a * vThreshold.r;
+
+	return pixel;
+}
+
+float4 Combination15(float2 vTex : TEXCOORD0) : COLOR
+{
+	float4 pixel = tex2D(sNewFrame, vTex*vRepeat);
+	pixel.a = 0;
+	for ( int i=0; i<15; i++ )
+	{
+		float4 prev = tex2D(sPrevMemory, vTex + vOffsets[i]);
+		float3 diff = prev.rgb - pixel.rgb;
+		pixel.a += prev.a * exp(-500 * dot(diff, diff) / 3);
+	}
+	pixel.a = 1 - pixel.a * vThreshold.r;
+
+	return pixel;
+}
+
+float4 Combination20(float2 vTex : TEXCOORD0) : COLOR
+{
+	float4 pixel = tex2D(sNewFrame, vTex*vRepeat);
+	pixel.a = 0;
+	for ( int i=0; i<20; i++ )
+	{
+		float4 prev = tex2D(sPrevMemory, vTex + vOffsets[i]);
+		float3 diff = prev.rgb - pixel.rgb;
+		pixel.a += prev.a * exp(-500 * dot(diff, diff) / 3);
+	}
+	pixel.a = 1 - pixel.a * vThreshold.r;
+
+	return pixel;
+}
+
+float4 Combination40(float2 vTex : TEXCOORD0) : COLOR
+{
+	float4 pixel = tex2D(sNewFrame, vTex*vRepeat);
+	pixel.a = 0;
+	for ( int i=0; i<40; i++ )
+	{
+		float4 prev = tex2D(sPrevMemory, vTex + vOffsets[i]);
+		float3 diff = prev.rgb - pixel.rgb;
+		pixel.a += prev.a * exp(-500 * dot(diff, diff) / 3);
+	}
+	pixel.a = 1 - pixel.a * vThreshold.r;
+
+	return pixel;
+}
+
+float4 Combination50(float2 vTex : TEXCOORD0) : COLOR
+{
+	float4 pixel = tex2D(sNewFrame, vTex*vRepeat);
+	pixel.a = 0;
+	for ( int i=0; i<50; i++ )
+	{
+		float4 prev = tex2D(sPrevMemory, vTex + vOffsets[i]);
+		float3 diff = prev.rgb - pixel.rgb;
+		pixel.a += prev.a * exp(-500 * dot(diff, diff) / 3);
+	}
+	pixel.a = 1 - pixel.a * vThreshold.r;
+
+	return pixel;
+}
