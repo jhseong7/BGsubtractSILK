@@ -6,6 +6,7 @@
 #include <string>
 #include <sstream>
 
+
 // Define vertex data structure.
 struct VERTEX_TYPE1
 {

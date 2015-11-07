@@ -12,8 +12,12 @@
 //Define
 //-----------------------------------------------------------------------------
 
-#define WEBCAM_MODE true
+#define WEBCAM_MODE false
 #define WEBCAM_NUMBER 1
+
+#define FRAMESKIP_NO 3
+
+#define FILESAVE_MODE_EN false
 
 //-----------------------------------------------------------------------------
 // Global variables
@@ -40,7 +44,7 @@ float g_rDamping = 0.99f;
 
 
 //OpenCV Global Variables
-char videoFilename[] = "[mix]IMG_1455backH264(AVC1)302015_11_02.avi";
+char videoFilename[] = "MVI_2947.MOV";
 char* SaveFilename = "Result.avi";
 cv::VideoCapture capture;
 cv::VideoCapture camera;
@@ -306,10 +310,8 @@ LRESULT WINAPI MsgProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
 	return DefWindowProc( hWnd, msg, wParam, lParam );
 }
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-					LPSTR lpCmdLine, INT)
+void InitOpenCVModules()
 {
-	//OPENCV initialize
 	capture = VideoCapture(videoFilename);
 
 	if (WEBCAM_MODE)
@@ -319,14 +321,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		if (!camera.isOpened())  //소스 영상 에러체크
 		{
 			//error in opening the video input
-			cerr << "Unable to open Camera Stream"<< endl;
+			cerr << "Unable to open Camera Stream" << endl;
 			exit(EXIT_FAILURE);
 		}
 
-		
+
 		camera >> Current_Frame;
 	}
-	
+
 	else
 	{
 		if (!capture.isOpened())  //소스 영상 에러체크
@@ -359,6 +361,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 		Current_Frame.copyTo(Background_Frame); //시작하는 루프에서는 배경 = 첫프레임
 	}
+}
+
+
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
+					LPSTR lpCmdLine, INT)
+{
+	//OPENCV initialize
+	InitOpenCVModules();
 
 	//WebCam Option
 	
@@ -420,47 +431,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	msg.message = WM_NULL;
 	
 	
-	/*
-	while( msg.message != WM_QUIT )
-	{
-		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-		{
-			// Translate and dispatch the message
-			TranslateMessage( &msg );
-			DispatchMessage( &msg );
-		}
-		else if ( g_devType==D3DDEVTYPE_HAL )
-		{
-			if ( g_frameRate.isTimeStarted() )
-				Render(hWnd);
-			else if ( g_bPlayStarted )
-			{
-				if ( g_data.LoadNextFrame(1) )
-				{
-					g_pLearnBackground->SwapBuffer();
-					Render( hWnd );
-				}
-				else
-					g_bPlayStarted = false;
-			}
-		}
-	}
-	*/
 
 
 
-	while (1)
+	while (1) //Frame Processing Loop Start
 	{
 		if (WEBCAM_MODE)
 		{
 			camera >> Current_Frame;
 		}
 
-		else if (!capture.read(Current_Frame)) 
+		else
 		{
-			cerr << "Unable to read next frame." << endl;
-			cerr << "Exiting..." << endl;
-			exit(EXIT_FAILURE);
+			for (int frameskip = 0; frameskip <= FRAMESKIP_NO; frameskip++)
+			{
+				if (!capture.read(Current_Frame))
+				{
+					cerr << "Unable to read next frame." << endl;
+					cerr << "Exiting..." << endl;
+					exit(EXIT_FAILURE);
+				}
+			}
 		}
 
 

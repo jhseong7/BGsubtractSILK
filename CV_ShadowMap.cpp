@@ -15,7 +15,7 @@
 
 #define min_fast(a,b) ( (a>b) ? b : a)
 
-#define DISSOLVE_RATE 10
+#define DISSOLVE_RATE 20
 
 using namespace cv;
 
@@ -34,7 +34,7 @@ void ShadowMapCreator(Mat* Shadow_Map, Mat* Input_Image, Mat* Background_Image)
 
 	int frame_step_y = Input_Image->step[0];
 	int frame_step_x = Input_Image->step[1];
-	char r_data, g_data, b_data;
+	int r_data, g_data, b_data;
 
 	for (int x = 0; x < Cols; x++)
 	{
