@@ -54,13 +54,14 @@ HRESULT DataMotion::ReloadImage()
 {
 	::ZeroMemory(&CV_Rect, sizeof(D3DLOCKED_RECT));
 
+	
 	D3DXCreateTexture(g_pd3dDevice, m_nWidth, m_nHeight, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, &CV_CurrentTexture);
 	D3DXCreateTexture(g_pd3dDevice, m_nWidth, m_nHeight, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &m_texCenter);
 		
 	CV_CurrentTexture->LockRect(0, &CV_Rect, NULL, 0);
 
-	int framestep_y = Current_Frame.step[0];
-	int framestep_x = Current_Frame.step[1];
+	static int framestep_y = Current_Frame.step[0];
+	static int framestep_x = Current_Frame.step[1];
 
 	BYTE *TexturePtr = (BYTE*)(CV_Rect.pBits);
 
@@ -79,8 +80,12 @@ HRESULT DataMotion::ReloadImage()
 
 	g_pd3dDevice->UpdateTexture(CV_CurrentTexture, m_texCenter);
 
+	CV_CurrentTexture->Release();
 
 	std::ostringstream strbuff;
+
+
+
 
 	/*
 	//strbuff << m_strPrefix << ""

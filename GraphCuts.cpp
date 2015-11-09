@@ -7,6 +7,7 @@
 #include "PushRelabel.h"
 #include "EvaluateMask.h"
 #include <fstream>
+#include <ctime>
 
 //-----------------------------------------------------------------------------
 //Define
@@ -15,7 +16,7 @@
 #define WEBCAM_MODE false
 #define WEBCAM_NUMBER 1
 
-#define FRAMESKIP_NO 3
+#define FRAMESKIP_NO 0
 
 #define FILESAVE_MODE_EN false
 
@@ -44,7 +45,7 @@ float g_rDamping = 0.99f;
 
 
 //OpenCV Global Variables
-char videoFilename[] = "MVI_2947.MOV";
+char videoFilename[] = "MVI_2948.MOV";
 char* SaveFilename = "Result.avi";
 cv::VideoCapture capture;
 cv::VideoCapture camera;
@@ -213,6 +214,7 @@ HRESULT InitD3D( HWND hWnd )
 		g_devType = D3DDEVTYPE_REF;
 	
 
+
 	D3DPRESENT_PARAMETERS d3dpp;
 	ZeroMemory( &d3dpp, sizeof(d3dpp) );
 	d3dpp.Windowed = TRUE;
@@ -310,9 +312,16 @@ LRESULT WINAPI MsgProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
 	return DefWindowProc( hWnd, msg, wParam, lParam );
 }
 
-void InitOpenCVModules()
+void InitOpenCVModules() //OPENCV 데이터들의 초기화
 {
-	capture = VideoCapture(videoFilename);
+	/*----------------------*/
+	//
+	//
+	//
+	//
+	/*-----------------------*/
+
+
 
 	if (WEBCAM_MODE)
 	{
@@ -326,11 +335,13 @@ void InitOpenCVModules()
 		}
 
 
-		camera >> Current_Frame;
+		camera >> Current_Frame; //카메라 소스에서 Current Frame으로 데이터를 넣어준다.
 	}
 
 	else
 	{
+		capture = VideoCapture(videoFilename); //파일에서 읽을 것을 할당해준다.
+
 		if (!capture.isOpened())  //소스 영상 에러체크
 		{
 			//error in opening the video input
@@ -363,7 +374,40 @@ void InitOpenCVModules()
 	}
 }
 
+void InitSaveDirectories()
+{
+	//----------------------------------------------------
+	//디버그용 데이터 저장을 위한 디렉토리를 만들어 놓는 작업
+	//data폴더를 생성하고 data 밑에 파일들을 저장한다.
+	//
+	//----------------------------------------------------
+	ostringstream StringBuffer1, StringBuffer2;
 
+	time_t now = time(0);
+	
+	
+	
+	if (WEBCAM_MODE)
+		StringBuffer1 << "Data/" << "Webcam" << ctime(&now) << '/';
+	else
+		StringBuffer1 << "Data/" << videoFilename << '/';
+
+	CreateDirectoryA(StringBuffer1.str().c_str(), NULL);
+	
+	string CommonData = StringBuffer1.str();
+
+	StringBuffer1.flush();
+	
+		StringBuffer1 << CommonData.c_str() << "Original/" << "fs=" << FRAMESKIP_NO <<'/';
+		CreateDirectoryA(StringBuffer1.str().c_str(), NULL);
+
+		StringBuffer2 << CommonData.c_str() << "Morphology/" << "fs=" << FRAMESKIP_NO << '/';
+		CreateDirectoryA(StringBuffer2.str().c_str(), NULL);
+
+		
+
+
+}
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 					LPSTR lpCmdLine, INT)
@@ -432,7 +476,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	
 	
 
-
+	InitSaveDirectories();
 
 	while (1) //Frame Processing Loop Start
 	{
@@ -474,6 +518,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		imshow("Shadow Map", Shadow_Map);
 		//imshow("Silouette SILK", Silouette_SILK);
 		imshow("Silouette Final", Silouette_Final);
+
+
 
 		if (waitKey(1) == 27) 
 			break;
