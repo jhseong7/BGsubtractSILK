@@ -23,6 +23,7 @@ DataMotion::~DataMotion()
 {
 	SAFE_RELEASE( m_texCenter );
 	SAFE_RELEASE( m_texTruth );
+	SAFE_RELEASE(CV_CurrentTexture);
 }
 
 bool DataMotion::VerifyImageSize()
@@ -79,8 +80,6 @@ HRESULT DataMotion::ReloadImage()
 	CV_CurrentTexture->UnlockRect(0);
 
 	g_pd3dDevice->UpdateTexture(CV_CurrentTexture, m_texCenter);
-
-	CV_CurrentTexture->Release();
 
 	std::ostringstream strbuff;
 

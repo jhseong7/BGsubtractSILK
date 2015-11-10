@@ -17,6 +17,8 @@ int erosion_size = 0;
 int dilation_elem = 0;
 int dilation_size = 0;
 
+static int trackbarposition = 100;
+
 ///////////////////////
 ///////////////////////
 
@@ -25,6 +27,13 @@ Mat Dilation(int dilation_elem, int dilation_size, Mat input_image, void*);
 Mat Make_contour(Mat input_image, vector<vector<Point> >* input_vector);
 
 /* Main function */
+
+
+void InitContourWindow()
+{
+	namedWindow("Contour data", WINDOW_AUTOSIZE);
+	createTrackbar("Track bar contour Length", "Contour data", &trackbarposition, 1000, NULL);
+}
 
 Mat contour(Mat* input_image, vector<vector<Point> >* contour_vector)
 {
@@ -42,7 +51,7 @@ Mat contour(Mat* input_image, vector<vector<Point> >* contour_vector)
     temp = Dilation(dilation_elem,dilation_size,image,0);
     temp = Dilation(dilation_elem,dilation_size,temp,0);
     temp = Erosion(erosion_elem,erosion_size,temp,0);
-    
+
     out_image = Make_contour(temp,contour_vector);
     
     return out_image;
@@ -95,7 +104,7 @@ Mat Make_contour(Mat input_image,vector<vector<Point> >* input_vector)
     int thresh = 150;
     Canny(input_image,canny_output,thresh,thresh*3,5);
     findContours(canny_output,contours,hierarchy,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_NONE,Point(0,0));
-    screened_contours[contours.size()];
+    //screened_contours[contours.size()];
     
     int i;
     
@@ -105,13 +114,13 @@ Mat Make_contour(Mat input_image,vector<vector<Point> >* input_vector)
     {
         int length = arcLength(contours[i], 1);
         color = Scalar(rng.uniform(0,255),rng.uniform(0,255),rng.uniform(0,255));
-        if(length>100)
+		if (length>trackbarposition)//250)
         {
             drawContours(drawing,contours,i,color,1,8,hierarchy[0][0],0,Point());
-            screened_contours[i] = contours[i];
+            //screened_contours[i] = contours[i];
         }
     }
     
-    *input_vector = screened_contours;
+    //*input_vector = screened_contours;
     return drawing;
 }

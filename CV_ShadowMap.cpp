@@ -19,16 +19,33 @@
 
 using namespace cv;
 
+static int Alpha1000 = (int)(ALPHA * 1000.0);
+static int Beta1000 = (int)(BETA * 1000.0);
+static int S_Thresh = S_THRESH;
+static int H_Thresh = H_THRESH;
+
+void InitShadowMapWindow()
+{
+	namedWindow("Shadow Map", WINDOW_AUTOSIZE);
+	//Trackbar »ý¼º
+	createTrackbar("Alpha", "Shadow Map", &Alpha1000, 1000, NULL);
+	createTrackbar("Beta", "Shadow Map", &Beta1000, 1000, NULL);
+	createTrackbar("S Threshold", "Shadow Map", &S_Thresh, 255, NULL);
+	createTrackbar("H Threshold", "Shadow Map", &H_Thresh, 180, NULL);
+}
 
 void ShadowMapCreator(Mat* Shadow_Map, Mat* Input_Image, Mat* Background_Image)
 {
+
+
+
 	//Gaussian Model
 	static Ptr<BackgroundSubtractor> pMOG2; //MOG2 Background subtractor  
 	static Mat DissolveMatrix = Mat::zeros(Rows, Cols, CV_8UC1);
 
 
 	if (pMOG2 == NULL)
-		pMOG2 = createBackgroundSubtractorMOG2();
+		pMOG2 = createBackgroundSubtractorMOG2(200, 16.0);
 
 	pMOG2->apply(*Input_Image, BackgroundMOG);
 
@@ -93,19 +110,19 @@ void ShadowMapCreator(Mat* Shadow_Map, Mat* Input_Image, Mat* Background_Image)
 			//Val
 			ValCon_data = (double)HSV_Split[2].data[y*Cols + x] / (double)HSV_Background_Split[2].data[y*Cols + x];
 
-			if (ValCon_data >= ALPHA && ValCon_data <= BETA)
+			if (ValCon_data >= (Alpha1000 / 1000.0) && ValCon_data <= (Beta1000 / 1000.0))
 				ValCondition = true;
 
 			//Saturation
 			SatCon_data = abs(HSV_Split[1].data[y*Cols + x] - HSV_Background_Split[1].data[y*Cols + x]);
 
-			if (SatCon_data <= S_THRESH)
+			if (SatCon_data <= S_Thresh)
 				SatCondition = true;
 
 			//Hue
 			HueCon_data = min_fast(HSV_Split[0].data[y*Cols + x] - HSV_Background_Split[0].data[y*Cols + x], 360 - (HSV_Split[0].data[y*Cols + x] - HSV_Background_Split[0].data[y*Cols + x]));
 
-			if (HueCon_data <= H_THRESH)
+			if (HueCon_data <= H_Thresh)
 				HueCondition = true;
 
 

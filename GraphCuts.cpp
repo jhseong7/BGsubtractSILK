@@ -23,6 +23,8 @@
 #define MORPH_STRUCT_SIZE_X 2
 #define MORPH_STRUCT_SIZE_Y 2
 
+#define READ_VIDEO_NAME "MVI_2948.MOV"
+
 //-----------------------------------------------------------------------------
 // Global variables
 //-----------------------------------------------------------------------------
@@ -46,9 +48,13 @@ float g_rThreshold = 0.70f;
 float g_rCutoffBack = 0.40f, g_rCutoffFore = 0.05f;
 float g_rDamping = 0.99f;
 
+//DirectX and WINAPI
+RECT rc;
+HWND hWnd;
+WNDCLASSEX wc;
 
 //OpenCV Global Variables
-char videoFilename[] = "MVI_2949.MOV";
+char* videoFilename = READ_VIDEO_NAME;
 char* SaveFilename = "Result.avi";
 cv::VideoCapture capture;
 cv::VideoCapture camera;
@@ -57,11 +63,12 @@ cv::Mat Current_Frame;
 cv::Mat Background_Frame;
 cv::Mat Shadow_Map;
 cv::Mat BackgroundMOG;
-cv::Mat Silouette_Final;
-cv::Mat Silouette_SILK;
+cv::Mat Silhouette_Final;
+cv::Mat Silhouette_SILK;
 
 int Rows, Cols;
 int frame_no = 0;
+
 
 using namespace std;
 using namespace cv;
@@ -144,10 +151,10 @@ VOID Render( HWND hWnd )
 		HRESULT gettarget = g_pd3dDevice->GetRenderTargetData(pSurfOldRenderTarget, CV_CopySurface);
 		HRESULT locked = CV_CopySurface->LockRect(&CV_SurfRect, NULL, 0);
 
-		static int framestep_y = Silouette_SILK.step[0];
-		static int framestep_x = Silouette_SILK.step[1];
-		static int m_nWidth = Silouette_SILK.cols;
-		static int m_nHeight = Silouette_SILK.rows;
+		static int framestep_y = Silhouette_SILK.step[0];
+		static int framestep_x = Silhouette_SILK.step[1];
+		static int m_nWidth = Silhouette_SILK.cols;
+		static int m_nHeight = Silhouette_SILK.rows;
 
 		BYTE *SurfacePtr = (BYTE*)(CV_SurfRect.pBits);
 		
@@ -159,14 +166,13 @@ VOID Render( HWND hWnd )
 				BYTE gdata = SurfacePtr[y * 4 * m_nWidth + x * 4 + 1];
 				BYTE rdata = SurfacePtr[y * 4 * m_nWidth + x * 4 + 2];
 
-				Silouette_SILK.data[y*framestep_y + x*framestep_x + 0] = SurfacePtr[y * 4 * m_nWidth + x * 4 + 0];
+				Silhouette_SILK.data[y*framestep_y + x*framestep_x + 0] = SurfacePtr[y * 4 * m_nWidth + x * 4 + 0];
 
 			}
 		}
 
-		HRESULT unlocked = CV_CopySurface->UnlockRect();
-//		HRESULT saved = D3DXSaveSurfaceToFileA("Current_Map2.bmp", D3DXIFF_BMP, CV_CopySurface, NULL, NULL);
-		
+		CV_CopySurface->UnlockRect();
+		SAFE_RELEASE(CV_CopySurface);
 	}
 	HRESULT failss = g_pd3dDevice->EndScene();
 	SAFE_RELEASE( pSurfOldRenderTarget );
@@ -371,8 +377,8 @@ void InitOpenCVModules() //OPENCV 데이터들의 초기화
 
 		Background_Frame = Mat(Rows, Cols, CV_8UC1);
 		Shadow_Map = Mat(Rows, Cols, CV_8UC1);
-		Silouette_Final = Mat(Rows, Cols, CV_8UC1);
-		Silouette_SILK = Mat(Rows, Cols, CV_8UC1);
+		Silhouette_Final = Mat(Rows, Cols, CV_8UC1);
+		Silhouette_SILK = Mat(Rows, Cols, CV_8UC1);
 
 		Current_Frame.copyTo(Background_Frame); //시작하는 루프에서는 배경 = 첫프레임
 	}
@@ -413,88 +419,104 @@ void InitSaveDirectories()
 
 }
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-					LPSTR lpCmdLine, INT)
+void InitWindows()
 {
-	//OPENCV initialize
-	InitOpenCVModules();
+	InitContourWindow();
+	InitShadowMapWindow();
+}
 
-	//WebCam Option
-	
-
-
- 	// TODO: Place code here.
-	if ( ! g_data.SetUpDataset( lpCmdLine ) )
+int InitDirectX(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, INT)
+{
+	// TODO: Place code here.
+	if (!g_data.SetUpDataset(lpCmdLine))
 		return E_FAIL;
 
 	// Register the window class
-	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, MsgProc, 0L, 0L,
-					hInstance, NULL,
-					LoadCursor(NULL, IDC_ARROW), (HBRUSH)GetStockObject(WHITE_BRUSH),
-					NULL, "Direct3D Shader", NULL };
-	if ( ! RegisterClassEx( &wc ) )
+	wc = { sizeof(WNDCLASSEX), CS_CLASSDC, MsgProc, 0L, 0L,
+		hInstance, NULL,
+		LoadCursor(NULL, IDC_ARROW), (HBRUSH)GetStockObject(WHITE_BRUSH),
+		NULL, "Direct3D Shader", NULL };
+	if (!RegisterClassEx(&wc))
 		return E_FAIL;
-	
+
 	// Set the window's initial style
 	DWORD dwStyle = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME |
-					WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE;
-	RECT rc;
-	SetRect( &rc, g_nPosX, g_nPosY,
-		g_data.m_nWidth*g_nColumn+g_nSpan*(g_nColumn-1)+g_nPosX,
-		g_data.m_nHeight*g_nRow+g_nSpan*(g_nRow-1)+g_nPosY );
-	AdjustWindowRect( &rc, dwStyle, false );
+		WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE;
+	
+	SetRect(&rc, g_nPosX, g_nPosY,
+		g_data.m_nWidth*g_nColumn + g_nSpan*(g_nColumn - 1) + g_nPosX,
+		g_data.m_nHeight*g_nRow + g_nSpan*(g_nRow - 1) + g_nPosY);
+	AdjustWindowRect(&rc, dwStyle, false);
 
 	// Create the application's window
-	HWND hWnd = CreateWindow( wc.lpszClassName, "Local Reliable Matches",
-							dwStyle, 0, 0,
-							(rc.right-rc.left), (rc.bottom-rc.top), NULL,
-							NULL, hInstance, NULL );
+	hWnd = CreateWindow(wc.lpszClassName, "Local Reliable Matches",
+		dwStyle, 0, 0,
+		(rc.right - rc.left), (rc.bottom - rc.top), NULL,
+		NULL, hInstance, NULL);
 
 	// Initialize Direct3D
-	if( FAILED( InitD3D( hWnd ) )
-		|| FAILED( g_data.ReloadImage() ) )
+	if (FAILED(InitD3D(hWnd))
+		|| FAILED(g_data.ReloadImage()))
 	{
-		UnregisterClass( wc.lpszClassName, hInstance );
+		UnregisterClass(wc.lpszClassName, hInstance);
 		return E_FAIL;
 	}
 
-	g_pLearnBackground = new LearnBackground( g_data );
-	if ( FAILED( g_pLearnBackground->CreateResources() ) )
+	g_pLearnBackground = new LearnBackground(g_data);
+	if (FAILED(g_pLearnBackground->CreateResources()))
 		return E_FAIL;
 
-	g_pPushRelabel = new PushRelabel( g_data );
-	if ( FAILED( g_pPushRelabel->CreateResources() ) )
+	g_pPushRelabel = new PushRelabel(g_data);
+	if (FAILED(g_pPushRelabel->CreateResources()))
 		return E_FAIL;
 
-	g_pEvaluateMask = new EvaluateMask( g_data, g_nColumn, g_nRow, g_nSpan );
-	if ( FAILED( g_pEvaluateMask->CreateResources() ) )
+	g_pEvaluateMask = new EvaluateMask(g_data, g_nColumn, g_nRow, g_nSpan);
+	if (FAILED(g_pEvaluateMask->CreateResources()))
 		return E_FAIL;
 
 	// Show the window
-	ShowWindow( hWnd, SW_SHOWDEFAULT );
-	UpdateWindow( hWnd );
+	ShowWindow(hWnd, SW_SHOWDEFAULT);
+	UpdateWindow(hWnd);
 
 	// Enter the message loop
 	MSG msg;
 	msg.message = WM_NULL;
-	
-	Mat Morph_Element = getStructuringElement(MORPH_CROSS, Size(2 * MORPH_STRUCT_SIZE_X + 1, 2 * MORPH_STRUCT_SIZE_Y + 1), Point(MORPH_STRUCT_SIZE_X, MORPH_STRUCT_SIZE_Y));
+}
 
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
+					LPSTR lpCmdLine, INT)
+{
+	//--------------------------------------
+	//초기화
+	//--------------------------------------
+
+	//OPENCV initialize
+	InitOpenCVModules();
+
+	//DirectX initialize
+	InitDirectX(hInstance, hPrevInstance, lpCmdLine, 0);
+
+	//Windows initialize
+	InitWindows();
 	InitSaveDirectories();
 
+	
+	//Variable Initialize
+	Mat Morph_Element = getStructuringElement(MORPH_CROSS, Size(2 * MORPH_STRUCT_SIZE_X + 1, 2 * MORPH_STRUCT_SIZE_Y + 1), Point(MORPH_STRUCT_SIZE_X, MORPH_STRUCT_SIZE_Y));
+	
 	vector<vector<Point>> VectorPointer;
 	Mat ContourData;
-
-	//VideoWriter Writer;
-	//Writer.open(SaveFilename, -1, 30, Current_Frame.size(), true);
 	
 
 	while (1) //Frame Processing Loop Start
 	{
-		frame_no++;
-		if (WEBCAM_MODE)
+
+
+		frame_no++; //프레임 넘버 기록
+
+		if (WEBCAM_MODE) //웹캠 모드인지 아닌지를 판별용 조건문
 		{
-			camera >> Current_Frame;
+			camera >> Current_Frame;                                                                                                        
 		}
 
 		else
@@ -516,23 +538,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		g_pLearnBackground->SwapBuffer();
 		Render(hWnd);
 
-		//Silouette_SILK=imread("Current_Map2.bmp" );
+		//Silhouette_SILK=imread("Current_Map2.bmp" );
 
 		ShadowMapCreator(&Shadow_Map, &Current_Frame, &Background_Frame);
-		ImageAbsSubtract(&Silouette_Final, &Silouette_SILK, &Shadow_Map, 1);
+		ImageAbsSubtract(&Silhouette_Final, &Silhouette_SILK, &Shadow_Map, 1);
 		
-		if (frame_no > 20)
-			ContourData = contour(&Silouette_Final, &VectorPointer);
+		
+		morphologyEx(Silhouette_Final, Silhouette_Final, MORPH_OPEN, Morph_Element);
 
+		ContourData = contour(&Silhouette_Final, &VectorPointer);
 
-		morphologyEx(Silouette_Final, Silouette_Final, MORPH_OPEN, Morph_Element);
-
+		imshow("Contour data", ContourData);
 		imshow("Input", Current_Frame);
 		imshow("Shadow Map", Shadow_Map);
-		//imshow("Silouette SILK", Silouette_SILK);
-		imshow("Silouette Final", Silouette_Final);
+		//imshow("Silhouette SILK", Silhouette_SILK);
+		imshow("Silhouette Final", Silhouette_Final);
 		 
-		//Writer << Silouette_Final;
+
 
 		if (waitKey(1) == 27) 
 			break;
