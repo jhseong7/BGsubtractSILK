@@ -143,6 +143,7 @@
     <ClCompile Include="LearnBackground.cpp" />
     <ClCompile Include="PushRelabel.cpp" />
     <ClCompile Include="CV_ShadowMap.cpp" />
+    <ClCompile Include="YJ_Contour.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DataMotion.h" />
@@ -150,7 +151,9 @@
     <ClInclude Include="framerate.h" />
     <ClInclude Include="general.h" />
     <ClInclude Include="LearnBackground.h" />
+    <ClInclude Include="opencv_essential_include.h" />
     <ClInclude Include="PushRelabel.h" />
+    <ClInclude Include="YJ_Contour.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\evaluate_motionmask.psh" />

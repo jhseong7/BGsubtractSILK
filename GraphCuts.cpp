@@ -14,11 +14,14 @@
 //-----------------------------------------------------------------------------
 
 #define WEBCAM_MODE false
-#define WEBCAM_NUMBER 1
+#define WEBCAM_NUMBER 2
 
 #define FRAMESKIP_NO 0
 
 #define FILESAVE_MODE_EN false
+
+#define MORPH_STRUCT_SIZE_X 2
+#define MORPH_STRUCT_SIZE_Y 2
 
 //-----------------------------------------------------------------------------
 // Global variables
@@ -45,7 +48,7 @@ float g_rDamping = 0.99f;
 
 
 //OpenCV Global Variables
-char videoFilename[] = "MVI_2948.MOV";
+char videoFilename[] = "MVI_2949.MOV";
 char* SaveFilename = "Result.avi";
 cv::VideoCapture capture;
 cv::VideoCapture camera;
@@ -58,6 +61,7 @@ cv::Mat Silouette_Final;
 cv::Mat Silouette_SILK;
 
 int Rows, Cols;
+int frame_no = 0;
 
 using namespace std;
 using namespace cv;
@@ -474,12 +478,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	MSG msg;
 	msg.message = WM_NULL;
 	
-	
+	Mat Morph_Element = getStructuringElement(MORPH_CROSS, Size(2 * MORPH_STRUCT_SIZE_X + 1, 2 * MORPH_STRUCT_SIZE_Y + 1), Point(MORPH_STRUCT_SIZE_X, MORPH_STRUCT_SIZE_Y));
 
 	InitSaveDirectories();
 
+	vector<vector<Point>> VectorPointer;
+	Mat ContourData;
+
+	//VideoWriter Writer;
+	//Writer.open(SaveFilename, -1, 30, Current_Frame.size(), true);
+	
+
 	while (1) //Frame Processing Loop Start
 	{
+		frame_no++;
 		if (WEBCAM_MODE)
 		{
 			camera >> Current_Frame;
@@ -497,9 +509,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 				}
 			}
 		}
-
-
-
+		
 
 		g_frameRate.isTimeStarted();
 		g_data.LoadNextFrame(1);
@@ -511,20 +521,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		ShadowMapCreator(&Shadow_Map, &Current_Frame, &Background_Frame);
 		ImageAbsSubtract(&Silouette_Final, &Silouette_SILK, &Shadow_Map, 1);
 		
-		static Mat element2 = getStructuringElement(MORPH_CROSS, Size(2 * 2 + 1, 2 * 2 + 1), Point(2, 2));
-		morphologyEx(Silouette_Final, Silouette_Final, MORPH_OPEN, element2);
+		if (frame_no > 20)
+			ContourData = contour(&Silouette_Final, &VectorPointer);
+
+
+		morphologyEx(Silouette_Final, Silouette_Final, MORPH_OPEN, Morph_Element);
 
 		imshow("Input", Current_Frame);
 		imshow("Shadow Map", Shadow_Map);
 		//imshow("Silouette SILK", Silouette_SILK);
 		imshow("Silouette Final", Silouette_Final);
-
-
+		 
+		//Writer << Silouette_Final;
 
 		if (waitKey(1) == 27) 
 			break;
 	}
-
+	
+	//Writer.release();
 
 	UnregisterClass( wc.lpszClassName, hInstance );
 	return S_OK;

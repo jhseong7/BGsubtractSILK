@@ -8,9 +8,9 @@
 #define COLOUR_GREEN 1
 #define COLOUR_RED 2
 
-#define ALPHA 0.4
+#define ALPHA 0.8
 #define BETA 0.9
-#define S_THRESH 120
+#define S_THRESH 60
 #define H_THRESH 10
 
 #define min_fast(a,b) ( (a>b) ? b : a)
