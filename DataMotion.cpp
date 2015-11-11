@@ -14,7 +14,6 @@ DataMotion::DataMotion()
 	m_nWidth = m_nHeight = m_nMaxFrame = 0;
 	m_nCurFrame = 0;
 	m_nBufferSize = 0;
-	m_nTile = m_nRow = m_nColumn = 0;
 
 	m_texCenter = m_texTruth = NULL;
 }

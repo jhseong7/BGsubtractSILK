@@ -16,14 +16,14 @@
 #define WEBCAM_MODE false
 #define WEBCAM_NUMBER 2
 
-#define FRAMESKIP_NO 0
+#define FRAMESKIP_NO 2
 
 #define FILESAVE_MODE_EN false
 
 #define MORPH_STRUCT_SIZE_X 2
 #define MORPH_STRUCT_SIZE_Y 2
 
-#define READ_VIDEO_NAME "MVI_2948.MOV"
+#define READ_VIDEO_NAME "MVI_2949.MOV"
 
 //-----------------------------------------------------------------------------
 // Global variables
@@ -65,9 +65,14 @@ cv::Mat Shadow_Map;
 cv::Mat BackgroundMOG;
 cv::Mat Silhouette_Final;
 cv::Mat Silhouette_SILK;
+cv::Mat Silhouette_Track;
 
 int Rows, Cols;
 int frame_no = 0;
+
+//Tracker º¯¼ö
+MeasurementCS CurrentMeasurementData;
+PredictedCS KalmanPredictedData;
 
 
 using namespace std;
@@ -481,6 +486,8 @@ int InitDirectX(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, I
 	// Enter the message loop
 	MSG msg;
 	msg.message = WM_NULL;
+
+	return S_OK;
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
@@ -546,6 +553,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		
 		morphologyEx(Silhouette_Final, Silhouette_Final, MORPH_OPEN, Morph_Element);
 
+
+		Silhouette_Final.copyTo(Silhouette_Track);
 		ContourData = contour(&Silhouette_Final, &VectorPointer);
 
 		imshow("Contour data", ContourData);
@@ -553,7 +562,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		imshow("Shadow Map", Shadow_Map);
 		//imshow("Silhouette SILK", Silhouette_SILK);
 		imshow("Silhouette Final", Silhouette_Final);
-		 
+		imshow("Silhouette Track", Silhouette_Track);
 
 
 		if (waitKey(1) == 27) 

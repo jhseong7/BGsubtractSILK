@@ -39,6 +39,12 @@
     <ClCompile Include="YJ_Contour.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CV_Kalman.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SC_Projection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DataMotion.h">
@@ -63,6 +69,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="opencv_essential_include.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CV_Kalman.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

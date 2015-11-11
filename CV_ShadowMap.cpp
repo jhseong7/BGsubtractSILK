@@ -1,6 +1,5 @@
 #include "DataMotion.h"
 
-#define NO_OF_FRAMES 100  //median을 사용할 frame의 갯수
 #define INTENSITY_LEVEL 256
 #define COLOUR_DEPTH 3
 
@@ -36,9 +35,7 @@ void InitShadowMapWindow()
 
 void ShadowMapCreator(Mat* Shadow_Map, Mat* Input_Image, Mat* Background_Image)
 {
-
-
-
+	
 	//Gaussian Model
 	static Ptr<BackgroundSubtractor> pMOG2; //MOG2 Background subtractor  
 	static Mat DissolveMatrix = Mat::zeros(Rows, Cols, CV_8UC1);

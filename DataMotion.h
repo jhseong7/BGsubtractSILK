@@ -9,6 +9,12 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2\core\directx.hpp>
 #include <opencv2\core\ocl.hpp>
+#include "CV_Kalman.h"
+
+//GraphCut
+extern cv::Mat Silhouette_Final;
+extern cv::Mat Silhouette_Track;
+
 
 //ShadowMap
 extern cv::Mat Current_Frame;
@@ -27,6 +33,17 @@ void InitContourWindow();
 
 //ShadowMap
 void InitShadowMapWindow();
+
+//Kalman
+typedef MeasurementCS PredictedCS;
+
+MeasurementCS DetectRectangle(Mat* Input_Image, Scalar Colour);
+PredictedCS KalmanTracker(MeasurementCS MeasurementData);
+
+
+extern MeasurementCS CurrentMeasurementData;
+extern PredictedCS KalmanPredictedData;
+
 
 //DataMotion
 

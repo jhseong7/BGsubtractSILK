@@ -118,9 +118,17 @@ Mat Make_contour(Mat input_image,vector<vector<Point> >* input_vector)
         {
             drawContours(drawing,contours,i,color,1,8,hierarchy[0][0],0,Point());
             //screened_contours[i] = contours[i];
+
+			CurrentMeasurementData = DetectRectangle(&drawing, color);
+
+			//KalmanPredictedData = KalmanTracker(CurrentMeasurementData);
+
+			//kalman 적용이 안된 measurement
+			rectangle(Silhouette_Track, CurrentMeasurementData.coor, CurrentMeasurementData.coor2, color, 3, 8, 0);
         }
     }
     
+	
     //*input_vector = screened_contours;
     return drawing;
 }

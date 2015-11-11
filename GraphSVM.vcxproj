@@ -137,15 +137,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CV_ImageSum.cpp" />
+    <ClCompile Include="CV_Kalman.cpp" />
     <ClCompile Include="DataMotion.cpp" />
     <ClCompile Include="EvaluateMask.cpp" />
     <ClCompile Include="GraphCuts.cpp" />
     <ClCompile Include="LearnBackground.cpp" />
     <ClCompile Include="PushRelabel.cpp" />
     <ClCompile Include="CV_ShadowMap.cpp" />
+    <ClCompile Include="SC_Projection.cpp" />
     <ClCompile Include="YJ_Contour.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CV_Kalman.h" />
     <ClInclude Include="DataMotion.h" />
     <ClInclude Include="EvaluateMask.h" />
     <ClInclude Include="framerate.h" />
