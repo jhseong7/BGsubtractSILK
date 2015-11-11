@@ -44,6 +44,8 @@ PredictedCS KalmanTracker(MeasurementCS MeasurementData);
 extern MeasurementCS CurrentMeasurementData;
 extern PredictedCS KalmanPredictedData;
 
+//½½Âù projection
+void SC_Projection(Mat* Input_Image, Mat* Output_Image);
 
 //DataMotion
 

@@ -16,14 +16,15 @@
 #define WEBCAM_MODE false
 #define WEBCAM_NUMBER 2
 
-#define FRAMESKIP_NO 2
+#define FRAMESKIP_NO 0
 
-#define FILESAVE_MODE_EN false
+#define FILESAVE_MODE_EN true
 
 #define MORPH_STRUCT_SIZE_X 2
 #define MORPH_STRUCT_SIZE_Y 2
 
-#define READ_VIDEO_NAME "MVI_2949.MOV"
+#define READ_VIDEO_FOLDER "Input/"
+#define READ_VIDEO_NAME "슬찬_느린걸음걸이1.MOV"
 
 //-----------------------------------------------------------------------------
 // Global variables
@@ -66,6 +67,7 @@ cv::Mat BackgroundMOG;
 cv::Mat Silhouette_Final;
 cv::Mat Silhouette_SILK;
 cv::Mat Silhouette_Track;
+cv::Mat Projection;
 
 int Rows, Cols;
 int frame_no = 0;
@@ -73,6 +75,9 @@ int frame_no = 0;
 //Tracker 변수
 MeasurementCS CurrentMeasurementData;
 PredictedCS KalmanPredictedData;
+
+//StringStream
+string SavePath1, SavePath2;
 
 
 using namespace std;
@@ -355,7 +360,9 @@ void InitOpenCVModules() //OPENCV 데이터들의 초기화
 
 	else
 	{
-		capture = VideoCapture(videoFilename); //파일에서 읽을 것을 할당해준다.
+		ostringstream FilePathVideo;
+		FilePathVideo  << READ_VIDEO_FOLDER << videoFilename;
+		capture = VideoCapture(FilePathVideo.str()); //파일에서 읽을 것을 할당해준다.
 
 		if (!capture.isOpened())  //소스 영상 에러체크
 		{
@@ -400,27 +407,33 @@ void InitSaveDirectories()
 
 	time_t now = time(0);
 	
-	
+	CreateDirectoryA("Silhouette Data", NULL);
 	
 	if (WEBCAM_MODE)
-		StringBuffer1 << "Data/" << "Webcam" << ctime(&now) << '/';
+		StringBuffer1 << "Silhouette Data/" << "Webcam" << ctime(&now) << '/';
 	else
-		StringBuffer1 << "Data/" << videoFilename << '/';
+		StringBuffer1 << "Silhouette Data/" << videoFilename << '/';
 
 	CreateDirectoryA(StringBuffer1.str().c_str(), NULL);
 	
 	string CommonData = StringBuffer1.str();
 
-	StringBuffer1.flush();
+	StringBuffer2 << StringBuffer1.str();
 	
-		StringBuffer1 << CommonData.c_str() << "Original/" << "fs=" << FRAMESKIP_NO <<'/';
-		CreateDirectoryA(StringBuffer1.str().c_str(), NULL);
+	StringBuffer1 << "Original/";
+	CreateDirectoryA(StringBuffer1.str().c_str(), NULL);
 
-		StringBuffer2 << CommonData.c_str() << "Morphology/" << "fs=" << FRAMESKIP_NO << '/';
-		CreateDirectoryA(StringBuffer2.str().c_str(), NULL);
+	StringBuffer2 << "Morphology/";
+	CreateDirectoryA(StringBuffer2.str().c_str(), NULL);
 
-		
+	StringBuffer1 << "frameskip=" << FRAMESKIP_NO <<'/';
+	CreateDirectoryA(StringBuffer1.str().c_str(), NULL);
 
+	StringBuffer2 << "frameskip=" << FRAMESKIP_NO << '/';
+	CreateDirectoryA(StringBuffer2.str().c_str(), NULL);
+
+	SavePath1 = StringBuffer1.str();
+	SavePath2 = StringBuffer2.str();
 
 }
 
@@ -505,7 +518,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 	//Windows initialize
 	InitWindows();
-	InitSaveDirectories();
+
+	if (FILESAVE_MODE_EN)
+		InitSaveDirectories();
 
 	
 	//Variable Initialize
@@ -550,19 +565,36 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		ShadowMapCreator(&Shadow_Map, &Current_Frame, &Background_Frame);
 		ImageAbsSubtract(&Silhouette_Final, &Silhouette_SILK, &Shadow_Map, 1);
 		
-		
+		if (FILESAVE_MODE_EN)
+		{
+			ostringstream Save1;
+			Save1 << SavePath1 << std::setfill('0') << std::setw(5) << frame_no << ".jpg";
+			imwrite(Save1.str(), Silhouette_Final);
+		}
+
 		morphologyEx(Silhouette_Final, Silhouette_Final, MORPH_OPEN, Morph_Element);
 
+		if (FILESAVE_MODE_EN)
+		{
+			ostringstream Save2;
+			Save2 << SavePath2 << std::setfill('0') << std::setw(5) << frame_no << ".jpg";
+			imwrite(Save2.str(), Silhouette_Final);
+		}
 
 		Silhouette_Final.copyTo(Silhouette_Track);
 		ContourData = contour(&Silhouette_Final, &VectorPointer);
 
+		//SC_Projection(&ContourData, &Projection);
+
+		//imshow("Projection", Projection);
 		imshow("Contour data", ContourData);
 		imshow("Input", Current_Frame);
 		imshow("Shadow Map", Shadow_Map);
 		//imshow("Silhouette SILK", Silhouette_SILK);
 		imshow("Silhouette Final", Silhouette_Final);
 		imshow("Silhouette Track", Silhouette_Track);
+
+
 
 
 		if (waitKey(1) == 27) 
