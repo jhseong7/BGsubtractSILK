@@ -16,7 +16,7 @@
 #define WEBCAM_MODE false
 #define WEBCAM_NUMBER 2
 
-#define FRAMESKIP_NO 0
+#define FRAMESKIP_NO 2
 
 #define FILESAVE_MODE_EN true
 
@@ -24,7 +24,7 @@
 #define MORPH_STRUCT_SIZE_Y 2
 
 #define READ_VIDEO_FOLDER "Input/"
-#define READ_VIDEO_NAME "슬찬_느린걸음걸이1.MOV"
+#define READ_VIDEO_NAME "종현_빠른걸음걸이2.MOV"
 
 //-----------------------------------------------------------------------------
 // Global variables
@@ -588,10 +588,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 		//imshow("Projection", Projection);
 		imshow("Contour data", ContourData);
-		imshow("Input", Current_Frame);
-		imshow("Shadow Map", Shadow_Map);
+		//imshow("Input", Current_Frame);
+		//imshow("Shadow Map", Shadow_Map);
 		//imshow("Silhouette SILK", Silhouette_SILK);
-		imshow("Silhouette Final", Silhouette_Final);
+		//imshow("Silhouette Final", Silhouette_Final);
 		imshow("Silhouette Track", Silhouette_Track);
 
 
