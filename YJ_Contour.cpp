@@ -22,10 +22,6 @@ static int trackbarposition = 100;
 ///////////////////////
 ///////////////////////
 
-Mat Erosion(int erosion_elem, int erosion_size, Mat input_image, void*);
-Mat Dilation(int dilation_elem, int dilation_size, Mat input_image, void*);
-Mat Make_contour(Mat input_image, vector<vector<Point> >* input_vector);
-
 /* Main function */
 
 
@@ -35,6 +31,7 @@ void InitContourWindow()
 	createTrackbar("Track bar contour Length", "Contour data", &trackbarposition, 1000, NULL);
 }
 
+/*
 Mat contour(Mat* input_image, vector<vector<Point> >* contour_vector)
 {
     Mat image;
@@ -57,7 +54,7 @@ Mat contour(Mat* input_image, vector<vector<Point> >* contour_vector)
     return out_image;
 }
 
-/* Erosion Function */
+// Erosion Function 
 
 Mat Erosion( int erosion_elem, int erosion_size, Mat input_image, void* )
 {
@@ -74,7 +71,7 @@ Mat Erosion( int erosion_elem, int erosion_size, Mat input_image, void* )
     return out_image;
 }
 
-/* Dilation Function */
+//Dilation Function 
 
 Mat Dilation( int dilation_elem, int dilation_size, Mat input_image,  void* )
 {
@@ -91,7 +88,7 @@ Mat Dilation( int dilation_elem, int dilation_size, Mat input_image,  void* )
     return out_image;
 }
 
-/* Contour make Function */
+/// Contour make Function 
 
 Mat Make_contour(Mat input_image,vector<vector<Point> >* input_vector)
 {
@@ -132,3 +129,4 @@ Mat Make_contour(Mat input_image,vector<vector<Point> >* input_vector)
     //*input_vector = screened_contours;
     return drawing;
 }
+*/

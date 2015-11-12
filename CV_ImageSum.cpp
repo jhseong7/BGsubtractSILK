@@ -2,6 +2,20 @@
 
 using namespace cv;
 
+bool CheckEmpty(Mat* Input_Image) // 단일 채널 이미지를 가정
+{
+	for (int x = 0; x < Cols; x++)
+	{
+		for (int y = 0; y < Rows; y++)
+		{
+			if (Input_Image->data[y*Cols + x] != 0)
+				return false;
+		}
+	}
+
+	return true;
+}
+
 
 void ImageMath(Mat* Result, Mat* Image1, Mat* Image2, char mode) //mode에 OR, AND, XOR을 받는다
 {

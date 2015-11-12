@@ -13,66 +13,141 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
+    <Filter Include="Source Files\Feature Extraction">
+      <UniqueIdentifier>{83ee9c54-bd38-4c66-86a9-b98961f72060}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Background Subtraction">
+      <UniqueIdentifier>{7e5ba2b2-bc62-4416-8e96-c648d0c11009}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Background Subtraction">
+      <UniqueIdentifier>{3f6e91f3-de41-4331-bd3f-2c1aac90f708}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Feature Extraction">
+      <UniqueIdentifier>{21b06c94-9d8f-4621-94aa-5e25f5cb50de}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="DataMotion.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="EvaluateMask.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GraphCuts.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="LearnBackground.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PushRelabel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="CV_ImageSum.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CV_ShadowMap.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="YJ_Contour.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Background Subtraction</Filter>
     </ClCompile>
     <ClCompile Include="CV_Kalman.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Background Subtraction</Filter>
     </ClCompile>
-    <ClCompile Include="SC_Projection.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="CV_ShadowMap.cpp">
+      <Filter>Source Files\Background Subtraction</Filter>
+    </ClCompile>
+    <ClCompile Include="DataMotion.cpp">
+      <Filter>Source Files\Background Subtraction</Filter>
+    </ClCompile>
+    <ClCompile Include="EvaluateMask.cpp">
+      <Filter>Source Files\Background Subtraction</Filter>
+    </ClCompile>
+    <ClCompile Include="LearnBackground.cpp">
+      <Filter>Source Files\Background Subtraction</Filter>
+    </ClCompile>
+    <ClCompile Include="PushRelabel.cpp">
+      <Filter>Source Files\Background Subtraction</Filter>
+    </ClCompile>
+    <ClCompile Include="YJ_Contour.cpp">
+      <Filter>Source Files\Background Subtraction</Filter>
+    </ClCompile>
+    <ClCompile Include="GraphCuts.cpp">
+      <Filter>Source Files\Background Subtraction</Filter>
+    </ClCompile>
+    <ClCompile Include="Contour_extraction.cpp">
+      <Filter>Source Files\Feature Extraction</Filter>
+    </ClCompile>
+    <ClCompile Include="Cutting_silhouette_area.cpp">
+      <Filter>Source Files\Feature Extraction</Filter>
+    </ClCompile>
+    <ClCompile Include="Find_refer_point.cpp">
+      <Filter>Source Files\Feature Extraction</Filter>
+    </ClCompile>
+    <ClCompile Include="Gait_period_cal.cpp">
+      <Filter>Source Files\Feature Extraction</Filter>
+    </ClCompile>
+    <ClCompile Include="HSC.cpp">
+      <Filter>Source Files\Feature Extraction</Filter>
+    </ClCompile>
+    <ClCompile Include="image_open.cpp">
+      <Filter>Source Files\Feature Extraction</Filter>
+    </ClCompile>
+    <ClCompile Include="Resampling.cpp">
+      <Filter>Source Files\Feature Extraction</Filter>
+    </ClCompile>
+    <ClCompile Include="Search_center.cpp">
+      <Filter>Source Files\Feature Extraction</Filter>
+    </ClCompile>
+    <ClCompile Include="Star_Skeleton.cpp">
+      <Filter>Source Files\Feature Extraction</Filter>
+    </ClCompile>
+    <ClCompile Include="temp.cpp">
+      <Filter>Source Files\Feature Extraction</Filter>
+    </ClCompile>
+    <ClCompile Include="Weight_cal.cpp">
+      <Filter>Source Files\Feature Extraction</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CV_Kalman.h">
+      <Filter>Header Files\Background Subtraction</Filter>
+    </ClInclude>
     <ClInclude Include="DataMotion.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Background Subtraction</Filter>
     </ClInclude>
     <ClInclude Include="EvaluateMask.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Background Subtraction</Filter>
     </ClInclude>
     <ClInclude Include="framerate.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Background Subtraction</Filter>
     </ClInclude>
     <ClInclude Include="general.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Background Subtraction</Filter>
     </ClInclude>
     <ClInclude Include="LearnBackground.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PushRelabel.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="YJ_Contour.hpp">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Background Subtraction</Filter>
     </ClInclude>
     <ClInclude Include="opencv_essential_include.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Background Subtraction</Filter>
     </ClInclude>
-    <ClInclude Include="CV_Kalman.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="PushRelabel.h">
+      <Filter>Header Files\Background Subtraction</Filter>
+    </ClInclude>
+    <ClInclude Include="Weight_cal.hpp">
+      <Filter>Header Files\Feature Extraction</Filter>
+    </ClInclude>
+    <ClInclude Include="HSC.hpp">
+      <Filter>Header Files\Feature Extraction</Filter>
+    </ClInclude>
+    <ClInclude Include="Gait_period_cal.hpp">
+      <Filter>Header Files\Feature Extraction</Filter>
+    </ClInclude>
+    <ClInclude Include="Cutting_silhouette_area.h">
+      <Filter>Header Files\Feature Extraction</Filter>
+    </ClInclude>
+    <ClInclude Include="opencv_inc.h">
+      <Filter>Header Files\Feature Extraction</Filter>
+    </ClInclude>
+    <ClInclude Include="Star_Skeleton.h">
+      <Filter>Header Files\Feature Extraction</Filter>
+    </ClInclude>
+    <ClInclude Include="Search_center.h">
+      <Filter>Header Files\Feature Extraction</Filter>
+    </ClInclude>
+    <ClInclude Include="Resampling.hpp">
+      <Filter>Header Files\Feature Extraction</Filter>
+    </ClInclude>
+    <ClInclude Include="Find_refer_point.hpp">
+      <Filter>Header Files\Feature Extraction</Filter>
+    </ClInclude>
+    <ClInclude Include="Image_open.h">
+      <Filter>Header Files\Feature Extraction</Filter>
+    </ClInclude>
+    <ClInclude Include="Contour_extraction.h">
+      <Filter>Header Files\Feature Extraction</Filter>
+    </ClInclude>
+    <ClInclude Include="temp.hpp">
+      <Filter>Header Files\Feature Extraction</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

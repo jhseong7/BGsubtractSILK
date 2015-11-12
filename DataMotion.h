@@ -11,6 +11,18 @@
 #include <opencv2\core\ocl.hpp>
 #include "CV_Kalman.h"
 
+//Feature Extraction - Yong Joo SulChan code header
+
+using namespace cv;
+using namespace std;
+
+#include "Image_open.h"
+#include "Cutting_silhouette_area.h"
+#include "Contour_extraction.h"
+#include "Gait_period_cal.hpp"
+#include "Resampling.hpp"
+#include "Find_refer_point.hpp"
+
 //GraphCut
 extern cv::Mat Silhouette_Final;
 extern cv::Mat Silhouette_Track;
@@ -19,12 +31,13 @@ extern cv::Mat Silhouette_Track;
 //ShadowMap
 extern cv::Mat Current_Frame;
 extern cv::Mat BackgroundMOG;
+extern cv::Mat HSV_Image, HSV_Background;
+extern cv::Mat HSV_Split[3], HSV_Background_Split[3];
 extern int Rows, Cols;
 
-using namespace cv;
-using namespace std;
 
 void ShadowMapCreator(Mat* Shadow_Map, Mat* Input_Image, Mat* Background_Image);
+bool CheckEmpty(Mat* Input_Image);
 void ImageAbsSubtract(Mat* Result, Mat* Image1, Mat* Image2, char mode);
 
 //Contour

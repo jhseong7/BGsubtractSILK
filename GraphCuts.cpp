@@ -18,13 +18,13 @@
 
 #define FRAMESKIP_NO 2
 
-#define FILESAVE_MODE_EN true
+#define FILESAVE_MODE_EN false
 
 #define MORPH_STRUCT_SIZE_X 2
 #define MORPH_STRUCT_SIZE_Y 2
 
 #define READ_VIDEO_FOLDER "Input/"
-#define READ_VIDEO_NAME "종현_빠른걸음걸이2.MOV"
+#define READ_VIDEO_NAME "재성개그걸음.MOV"
 
 //-----------------------------------------------------------------------------
 // Global variables
@@ -78,6 +78,10 @@ PredictedCS KalmanPredictedData;
 
 //StringStream
 string SavePath1, SavePath2;
+
+//Shadow Map
+Mat HSV_Image, HSV_Background;
+Mat HSV_Split[3], HSV_Background_Split[3];
 
 
 using namespace std;
@@ -519,6 +523,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	//Windows initialize
 	InitWindows();
 
+	//Debug 모드 사용시 사용하는 파일 구조 만들기
 	if (FILESAVE_MODE_EN)
 		InitSaveDirectories();
 
@@ -532,8 +537,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 	while (1) //Frame Processing Loop Start
 	{
-
-
 		frame_no++; //프레임 넘버 기록
 
 		if (WEBCAM_MODE) //웹캠 모드인지 아닌지를 판별용 조건문
@@ -554,13 +557,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 			}
 		}
 		
-
-		g_frameRate.isTimeStarted();
+		//g_frameRate.isTimeStarted();
 		g_data.LoadNextFrame(1);
 		g_pLearnBackground->SwapBuffer();
 		Render(hWnd);
-
-		//Silhouette_SILK=imread("Current_Map2.bmp" );
 
 		ShadowMapCreator(&Shadow_Map, &Current_Frame, &Background_Frame);
 		ImageAbsSubtract(&Silhouette_Final, &Silhouette_SILK, &Shadow_Map, 1);
@@ -582,20 +582,54 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		}
 
 		Silhouette_Final.copyTo(Silhouette_Track);
-		ContourData = contour(&Silhouette_Final, &VectorPointer);
-
+		//ContourData = contour(&Silhouette_Final, &VectorPointer);
 		//SC_Projection(&ContourData, &Projection);
-
 		//imshow("Projection", Projection);
-		imshow("Contour data", ContourData);
-		//imshow("Input", Current_Frame);
-		//imshow("Shadow Map", Shadow_Map);
-		//imshow("Silhouette SILK", Silhouette_SILK);
-		//imshow("Silhouette Final", Silhouette_Final);
-		imshow("Silhouette Track", Silhouette_Track);
+		//imshow("Contour data", ContourData);
+		//imshow("Silhouette Track", Silhouette_Track);
+		imshow("Input", Current_Frame);
+		imshow("Shadow Map", Shadow_Map);
+		imshow("Silhouette SILK", Silhouette_SILK);
+		imshow("Silhouette Final", Silhouette_Final);
+		
+		//---------------------------------------------------------------//
+		//     Preproccesing START (Feature Extraction)                  //
+		//---------------------------------------------------------------//
+		if (!CheckEmpty(&Silhouette_Final))
+		{
+			//variable 선언
+			Mat Contour_out_image_array;
+			Mat Cutting_image_array;
+			Mat Resampled_image_array;
 
+			int i;
+			int height = 0;   int width = 0;    int period = 0;
+			double Bounding_box_ratio;
 
+			vector<Point> contour_point_array;
+			vector<Point> refer_point;
+			vector<vector<Point> > Segment;
 
+			//Frame Process step
+			Cutting_image_array = Cutting_silhouette_area(&Silhouette_Final, &height, &width);
+			Bounding_box_ratio = (double)height / (double)width;
+
+			// Contour extraction
+			Contour_out_image_array = Contour(&Cutting_image_array, &contour_point_array);
+
+			// Resampling
+			refer_point = Find_refer_point(contour_point_array);
+			Segment = Resampling(&contour_point_array, &refer_point);
+			Resampled_image_array = Draw_Resampling(Segment, Contour_out_image_array);
+
+			imshow("Cutting_image", Cutting_image_array);
+			imshow("Contour_image", Contour_out_image_array);
+			imshow("Resampling_image", Resampled_image_array);
+		}
+
+		//---------------------------------------------------------------//
+		//     Preproccesing END (Feature Extraction)                    //
+		//---------------------------------------------------------------//
 
 		if (waitKey(1) == 27) 
 			break;

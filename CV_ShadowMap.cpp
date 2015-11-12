@@ -59,10 +59,10 @@ void ShadowMapCreator(Mat* Shadow_Map, Mat* Input_Image, Mat* Background_Image)
 			b_data = Background_Image->data[frame_step_y * y + frame_step_x * x + COLOUR_BLUE];
 
 			//MOG에서 background인 경우에만 model을 업그래이드
-			if (BackgroundMOG.data[y*Cols + x] == 0)
+			if (BackgroundMOG.data[y*Cols + x] == 0 && DissolveMatrix.data[y*Cols + x] <= DISSOLVE_RATE)
 				DissolveMatrix.data[y*Cols + x]++;
-			else //dissolve가 안되면 초기화
-				DissolveMatrix.data[y*Cols + x] = 0;
+			else //dissolve가 안되면 감점
+				DissolveMatrix.data[y*Cols + x]--;
 
 			if (DissolveMatrix.data[y*Cols + x] > DISSOLVE_RATE)
 			{
@@ -75,9 +75,6 @@ void ShadowMapCreator(Mat* Shadow_Map, Mat* Input_Image, Mat* Background_Image)
 	}
 
 	//Shadow Map
-	Mat HSV_Image, HSV_Background;
-	Mat HSV_Split[3], HSV_Background_Split[3];
-
 	cvtColor(*Background_Image, HSV_Background, CV_RGB2HSV, 0);
 	split(HSV_Background, HSV_Background_Split);
 
