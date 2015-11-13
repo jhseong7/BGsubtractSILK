@@ -2,7 +2,7 @@
 #include "opencv_inc.h"
 #include "Resampling.hpp"
 
-#define DEFAULT_INIT 1
+#define DEFAULT_INIT 0
 
 int sample_point = 40;
 

@@ -8,6 +8,7 @@
 #include "EvaluateMask.h"
 #include <fstream>
 #include <ctime>
+#include <opencv2\core\ocl.hpp>
 
 //-----------------------------------------------------------------------------
 //Define
@@ -20,8 +21,8 @@
 
 #define FILESAVE_MODE_EN false
 
-#define MORPH_STRUCT_SIZE_X 2
-#define MORPH_STRUCT_SIZE_Y 2
+#define MORPH_STRUCT_SIZE_X 1
+#define MORPH_STRUCT_SIZE_Y 4
 
 #define READ_VIDEO_FOLDER "Input/"
 #define READ_VIDEO_NAME "재성개그걸음.MOV"
@@ -67,7 +68,7 @@ cv::Mat BackgroundMOG;
 cv::Mat Silhouette_Final;
 cv::Mat Silhouette_SILK;
 cv::Mat Silhouette_Track;
-cv::Mat Projection;
+cv::Mat ContourImages;
 
 int Rows, Cols;
 int frame_no = 0;
@@ -77,7 +78,7 @@ MeasurementCS CurrentMeasurementData;
 PredictedCS KalmanPredictedData;
 
 //StringStream
-string SavePath1, SavePath2;
+string SavePath1, SavePath2, SavePath3, SavePath4;
 
 //Shadow Map
 Mat HSV_Image, HSV_Background;
@@ -395,6 +396,7 @@ void InitOpenCVModules() //OPENCV 데이터들의 초기화
 		Shadow_Map = Mat(Rows, Cols, CV_8UC1);
 		Silhouette_Final = Mat(Rows, Cols, CV_8UC1);
 		Silhouette_SILK = Mat(Rows, Cols, CV_8UC1);
+		ContourImages = Mat(Rows, 2*Cols, CV_8UC3);
 
 		Current_Frame.copyTo(Background_Frame); //시작하는 루프에서는 배경 = 첫프레임
 	}
@@ -407,7 +409,7 @@ void InitSaveDirectories()
 	//data폴더를 생성하고 data 밑에 파일들을 저장한다.
 	//
 	//----------------------------------------------------
-	ostringstream StringBuffer1, StringBuffer2;
+	ostringstream StringBuffer1, StringBuffer2, StringBuffer3, StringBuffer4;
 
 	time_t now = time(0);
 	
@@ -422,7 +424,9 @@ void InitSaveDirectories()
 	
 	string CommonData = StringBuffer1.str();
 
-	StringBuffer2 << StringBuffer1.str();
+	StringBuffer2 << CommonData;
+	StringBuffer3 << CommonData; //contour
+	StringBuffer4 << CommonData; // resampled
 	
 	StringBuffer1 << "Original/";
 	CreateDirectoryA(StringBuffer1.str().c_str(), NULL);
@@ -430,14 +434,28 @@ void InitSaveDirectories()
 	StringBuffer2 << "Morphology/";
 	CreateDirectoryA(StringBuffer2.str().c_str(), NULL);
 
+	StringBuffer3 << "Contour/";
+	CreateDirectoryA(StringBuffer3.str().c_str(), NULL);
+
+	StringBuffer4 << "Resampled/";
+	CreateDirectoryA(StringBuffer4.str().c_str(), NULL);
+
 	StringBuffer1 << "frameskip=" << FRAMESKIP_NO <<'/';
 	CreateDirectoryA(StringBuffer1.str().c_str(), NULL);
 
 	StringBuffer2 << "frameskip=" << FRAMESKIP_NO << '/';
 	CreateDirectoryA(StringBuffer2.str().c_str(), NULL);
 
+	StringBuffer3 << "frameskip=" << FRAMESKIP_NO << '/';
+	CreateDirectoryA(StringBuffer3.str().c_str(), NULL);
+
+	StringBuffer4 << "frameskip=" << FRAMESKIP_NO << '/';
+	CreateDirectoryA(StringBuffer4.str().c_str(), NULL);
+
 	SavePath1 = StringBuffer1.str();
 	SavePath2 = StringBuffer2.str();
+	SavePath3 = StringBuffer3.str();
+	SavePath4 = StringBuffer4.str();
 
 }
 
@@ -521,7 +539,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	InitDirectX(hInstance, hPrevInstance, lpCmdLine, 0);
 
 	//Windows initialize
-	InitWindows();
+	//InitWindows();
 
 	//Debug 모드 사용시 사용하는 파일 구조 만들기
 	if (FILESAVE_MODE_EN)
@@ -529,7 +547,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 	
 	//Variable Initialize
-	Mat Morph_Element = getStructuringElement(MORPH_CROSS, Size(2 * MORPH_STRUCT_SIZE_X + 1, 2 * MORPH_STRUCT_SIZE_Y + 1), Point(MORPH_STRUCT_SIZE_X, MORPH_STRUCT_SIZE_Y));
+	Mat Morph_Element = getStructuringElement(MORPH_RECT, Size(2 * MORPH_STRUCT_SIZE_X + 1, 2 * MORPH_STRUCT_SIZE_Y + 1), Point(MORPH_STRUCT_SIZE_X, MORPH_STRUCT_SIZE_Y));
 	
 	vector<vector<Point>> VectorPointer;
 	Mat ContourData;
@@ -572,7 +590,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 			imwrite(Save1.str(), Silhouette_Final);
 		}
 
-		morphologyEx(Silhouette_Final, Silhouette_Final, MORPH_OPEN, Morph_Element);
+		Mat Longest_Contour;
+
+		ContourBasedFilter(&Longest_Contour, &Silhouette_Final);
+		morphologyEx(Longest_Contour, Longest_Contour, MORPH_DILATE, Morph_Element);
+		//imshow("Contour data", Longest_Contour);
+
+		//morphologyEx(Silhouette_Final, Silhouette_Final, MORPH_OPEN, Morph_Element);
 
 		if (FILESAVE_MODE_EN)
 		{
@@ -581,37 +605,45 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 			imwrite(Save2.str(), Silhouette_Final);
 		}
 
-		Silhouette_Final.copyTo(Silhouette_Track);
+		//Silhouette_Final.copyTo(Silhouette_Track);
 		//ContourData = contour(&Silhouette_Final, &VectorPointer);
 		//SC_Projection(&ContourData, &Projection);
 		//imshow("Projection", Projection);
 		//imshow("Contour data", ContourData);
 		//imshow("Silhouette Track", Silhouette_Track);
 		imshow("Input", Current_Frame);
-		imshow("Shadow Map", Shadow_Map);
-		imshow("Silhouette SILK", Silhouette_SILK);
+		//imshow("Shadow Map", Shadow_Map);
+		//imshow("Silhouette SILK", Silhouette_SILK);
 		imshow("Silhouette Final", Silhouette_Final);
-		
+
+
+
 		//---------------------------------------------------------------//
 		//     Preproccesing START (Feature Extraction)                  //
 		//---------------------------------------------------------------//
-		if (!CheckEmpty(&Silhouette_Final))
+		//variable 선언
+		Mat Contour_out_image_array;
+		Mat Cutting_image_array;
+		Mat Resampled_image_array;
+
+		int i;
+		int height = 0;   int width = 0;    int period = 0;
+		double Bounding_box_ratio;
+
+		vector<Point> contour_point_array;
+		vector<Point> refer_point;
+		vector<vector<Point> > Segment;
+
+		if (!CheckEmpty(&Longest_Contour))
 		{
-			//variable 선언
-			Mat Contour_out_image_array;
-			Mat Cutting_image_array;
-			Mat Resampled_image_array;
 
-			int i;
-			int height = 0;   int width = 0;    int period = 0;
-			double Bounding_box_ratio;
-
-			vector<Point> contour_point_array;
-			vector<Point> refer_point;
-			vector<vector<Point> > Segment;
-
+			
+			//Silhouette screen using contour length
+			
+			
+			
 			//Frame Process step
-			Cutting_image_array = Cutting_silhouette_area(&Silhouette_Final, &height, &width);
+			Cutting_image_array = Cutting_silhouette_area(&Longest_Contour, &height, &width);
 			Bounding_box_ratio = (double)height / (double)width;
 
 			// Contour extraction
@@ -622,17 +654,45 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 			Segment = Resampling(&contour_point_array, &refer_point);
 			Resampled_image_array = Draw_Resampling(Segment, Contour_out_image_array);
 
-			imshow("Cutting_image", Cutting_image_array);
+			if (FILESAVE_MODE_EN)
+			{
+				ostringstream Save3, Save4;
+				Save3 << SavePath3 << std::setfill('0') << std::setw(5) << frame_no << ".jpg";
+				imwrite(Save3.str(), Contour_out_image_array);
+
+				Save4 << SavePath4 << std::setfill('0') << std::setw(5) << frame_no << ".jpg";
+				imwrite(Save4.str(), Resampled_image_array);
+			}
+
+			resize(Contour_out_image_array, Contour_out_image_array, Size(3 * width, 3 * height), 0, 0, CV_INTER_NN);
+			resize(Resampled_image_array, Resampled_image_array, Size(3 * width, 3 * height), 0, 0, CV_INTER_NN);
+
+			//imshow("Cutting_image", Cutting_image_array);
 			imshow("Contour_image", Contour_out_image_array);
 			imshow("Resampling_image", Resampled_image_array);
+
+			//ShowSteadyContour(&ContourImages, &Contour_out_image_array, &Resampled_image_array);
+			//imshow("Contour Images", ContourImages);
+			//resizeWindow("Contour_image", Cols / 2, Rows);
+			//resizeWindow("Resampling_image", Cols / 2, Rows);
 		}
 
 		//---------------------------------------------------------------//
 		//     Preproccesing END (Feature Extraction)                    //
 		//---------------------------------------------------------------//
 
-		if (waitKey(1) == 27) 
+		//Arrange Windows
+		MoveWindow(hWnd, 3*Cols, 0, Cols, Rows, false); //일단 치우자
+
+		cv::moveWindow("Silhouette Final", 0 + Cols, 0);
+		cv::moveWindow("Input", 0, 0);
+		cv::moveWindow("Contour_image", 0 + (Cols - width)/2, 0 + Rows + 30);
+		cv::moveWindow("Resampling_image", 0 + (3*Cols - width) / 2, 0 + Rows + 30);
+
+		if (waitKey(1) == 27) //ESC키로 종료 
 			break;
+
+		Current_Frame.release();
 	}
 	
 	//Writer.release();

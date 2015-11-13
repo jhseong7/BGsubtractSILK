@@ -17,7 +17,7 @@ int erosion_size = 0;
 int dilation_elem = 0;
 int dilation_size = 0;
 
-static int trackbarposition = 100;
+
 
 ///////////////////////
 ///////////////////////
@@ -25,11 +25,7 @@ static int trackbarposition = 100;
 /* Main function */
 
 
-void InitContourWindow()
-{
-	namedWindow("Contour data", WINDOW_AUTOSIZE);
-	createTrackbar("Track bar contour Length", "Contour data", &trackbarposition, 1000, NULL);
-}
+
 
 /*
 Mat contour(Mat* input_image, vector<vector<Point> >* contour_vector)

@@ -146,7 +146,6 @@
     <ClCompile Include="Gait_period_cal.cpp" />
     <ClCompile Include="GraphCuts.cpp" />
     <ClCompile Include="HSC.cpp" />
-    <ClCompile Include="image_open.cpp" />
     <ClCompile Include="LearnBackground.cpp" />
     <ClCompile Include="PushRelabel.cpp" />
     <ClCompile Include="CV_ShadowMap.cpp" />
