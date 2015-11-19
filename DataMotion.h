@@ -16,12 +16,17 @@
 using namespace cv;
 using namespace std;
 
+
 #include "Image_open.h"
 #include "Cutting_silhouette_area.h"
 #include "Contour_extraction.h"
 #include "Gait_period_cal.hpp"
 #include "Resampling.hpp"
 #include "Find_refer_point.hpp"
+
+//opencl
+
+
 
 //GraphCut
 extern cv::Mat Silhouette_Final;
@@ -32,8 +37,10 @@ extern cv::Mat Silhouette_Track;
 extern cv::Mat Current_Frame;
 extern cv::Mat BackgroundMOG;
 extern cv::Mat HSV_Image, HSV_Background;
-extern cv::Mat HSV_Split[3], HSV_Background_Split[3];
 extern int Rows, Cols;
+
+extern cv::UMat CL_Current_Frame;
+extern cv::UMat CL_Background_Frame;
 
 
 void ShadowMapCreator(Mat* Shadow_Map, Mat* Input_Image, Mat* Background_Image);

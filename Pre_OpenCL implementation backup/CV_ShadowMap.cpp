@@ -1,5 +1,4 @@
 #include "DataMotion.h"
-#include "OpenCL.h"
 
 #define INTENSITY_LEVEL 256
 #define COLOUR_DEPTH 3
@@ -24,7 +23,6 @@ static int Beta1000 = (int)(BETA * 1000.0);
 static int S_Thresh = S_THRESH;
 static int H_Thresh = H_THRESH;
 
-
 void InitShadowMapWindow()
 {
 	namedWindow("Shadow Map", WINDOW_AUTOSIZE);
@@ -42,22 +40,11 @@ void ShadowMapCreator(Mat* Shadow_Map, Mat* Input_Image, Mat* Background_Image)
 	UMat outInput, outInputSplit;
 	UMat CL_Background_MOG;
 
-	//OpenCl
-	 cl_mem memobj_Background = NULL;
-	 cl_mem memobj_Inputimage = NULL;
-	 cl_mem memobj_Dissolve = NULL;
-	 cl_mem memobj_BackgroundMOG = NULL;
+
 	
-	int Channel = Input_Image->channels();
-
-	size_t Memory_Size= Rows*Cols*Channel*sizeof(uchar);
-	size_t Memory_Size_Uni = Rows*Cols*1*sizeof(uchar);
-
-	global_work_size = Memory_Size;
-
 	//Gaussian Model
 	static Ptr<BackgroundSubtractor> pMOG2; //MOG2 Background subtractor  
-	static Mat DissolveMatrix = Mat::zeros(Rows, Cols, CV_8UC3);
+	static Mat DissolveMatrix = Mat::zeros(Rows, Cols, CV_8UC1);
 
 
 	if (pMOG2 == NULL)
@@ -67,21 +54,10 @@ void ShadowMapCreator(Mat* Shadow_Map, Mat* Input_Image, Mat* Background_Image)
 
 	CL_Background_MOG.copyTo(BackgroundMOG);
 
-	cvtColor(CL_Current_Frame, outInput, CV_RGB2HSV, 0);
-	//split(outBack, outBackSplit);
 
-	cvtColor(CL_Background_Frame, outBack, CV_RGB2HSV, 0);
-	//split(outInput, outInputSplit);
-
-	outInput.copyTo(HSV_Image);
-	outBack.copyTo(HSV_Background);
-
-	/*
-	//Serial Code
 	int frame_step_y = Input_Image->step[0];
 	int frame_step_x = Input_Image->step[1];
 	int r_data, g_data, b_data;
-
 
 	for (int x = 0; x < Cols; x++)
 	{
@@ -95,7 +71,7 @@ void ShadowMapCreator(Mat* Shadow_Map, Mat* Input_Image, Mat* Background_Image)
 			if (BackgroundMOG.data[y*Cols + x] == 0 && DissolveMatrix.data[y*Cols + x] <= DISSOLVE_RATE)
 				DissolveMatrix.data[y*Cols + x]++;
 			else //dissolve가 안되면 감점
-				DissolveMatrix.data[y*Cols + x]=0;
+				DissolveMatrix.data[y*Cols + x]--;
 
 			if (DissolveMatrix.data[y*Cols + x] > DISSOLVE_RATE)
 			{
@@ -106,42 +82,18 @@ void ShadowMapCreator(Mat* Shadow_Map, Mat* Input_Image, Mat* Background_Image)
 
 		}
 	}
-	*/
-	
-	//CL = BackgroundModeler(__global uchar* Background_Model, __global uchar* Input_Image, __global uchar* Dissolve_Matrix)
-	
-	memobj_Background = clCreateBuffer(context, CL_DEVICE_TYPE_DEFAULT, Memory_Size, NULL, &ret);
-	memobj_Inputimage = clCreateBuffer(context, CL_DEVICE_TYPE_DEFAULT, Memory_Size, NULL, &ret);
-	memobj_Dissolve = clCreateBuffer(context, CL_DEVICE_TYPE_DEFAULT, Memory_Size, NULL, &ret);
-	memobj_BackgroundMOG = clCreateBuffer(context, CL_DEVICE_TYPE_DEFAULT, Memory_Size_Uni, NULL, &ret);
 
-	ret = clEnqueueWriteBuffer(command_queue, memobj_Background, CL_TRUE, 0, Memory_Size, Background_Image->data, 0, NULL, NULL);
-	ret = clEnqueueWriteBuffer(command_queue, memobj_Inputimage, CL_TRUE, 0, Memory_Size, Input_Image->data, 0, NULL, NULL);
-	ret = clEnqueueWriteBuffer(command_queue, memobj_Dissolve, CL_TRUE, 0, Memory_Size, DissolveMatrix.data, 0, NULL, NULL);
-	ret = clEnqueueWriteBuffer(command_queue, memobj_BackgroundMOG, CL_TRUE, 0, Memory_Size_Uni, BackgroundMOG.data, 0, NULL, NULL);
-
-	//Argument 전달 
-	ret = clSetKernelArg(kernel_BG_Model, 0, sizeof(cl_mem), (void*)&memobj_Background);
-	ret = clSetKernelArg(kernel_BG_Model, 1, sizeof(cl_mem), (void*)&memobj_Inputimage);
-	ret = clSetKernelArg(kernel_BG_Model, 2, sizeof(cl_mem), (void*)&memobj_Dissolve);
-	ret = clSetKernelArg(kernel_BG_Model, 3, sizeof(cl_mem), (void*)&memobj_BackgroundMOG);
-
-	//커널 실행
-	ret = clEnqueueNDRangeKernel(command_queue, kernel_BG_Model, 1, NULL, &global_work_size, &local_work_size, 0, NULL, NULL);
-
-	if (ret)
-		ret += 1;
-	//메모리 버퍼로부터 결과를 얻음 (Background Model만)
-	ret = clEnqueueReadBuffer(command_queue, memobj_Background, CL_TRUE, 0, Memory_Size * sizeof(uchar), Background_Image->data, 0, NULL, NULL);
-	ret = clEnqueueReadBuffer(command_queue, memobj_Dissolve, CL_TRUE, 0, Memory_Size * sizeof(uchar), DissolveMatrix.data, 0, NULL, NULL);
-	
-	//imshow("BackMOG", BackgroundMOG);
-	//imshow("Back", (*Background_Image));
-	
 	//Shadow Map
 
 
+	cvtColor(CL_Current_Frame, outBack, CV_RGB2HSV, 0);
+	//split(outBack, outBackSplit);
 
+	cvtColor(CL_Background_Frame, outInput, CV_RGB2HSV, 0);
+	//split(outInput, outInputSplit);
+
+	outInput.copyTo(HSV_Image);
+	outInput.copyTo(HSV_Background);
 
 	//0: Hue (angle, 0~360), 1: Saturation(0~1), 2: Value(0~1)
 

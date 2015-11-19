@@ -1,4 +1,5 @@
 #include "DataMotion.h"
+#include "OpenCL.h"
 
 using namespace cv;
 
@@ -105,9 +106,14 @@ void ImageMath(Mat* Result, Mat* Image1, Mat* Image2, char mode) //mode에 OR, AN
 
 void ImageAbsSubtract(Mat* Result, Mat* Image1, Mat* Image2, char mode) //Result = Image1 - Image2 (Image1>Image2) else result=0;
 {
-	static int frame_step_y = Image1->step[0];
-	static int frame_step_x = Image1->step[1];
+	cl_mem memobj_Result = NULL;
+	cl_mem memobj_Image1 = NULL;
+	cl_mem memobj_Image2 = NULL;
 
+	size_t Memory_Size = Rows*Cols*sizeof(uchar);
+
+	global_work_size = Memory_Size;
+	/*
 	for (int x = 0; x < Cols; x++)
 	{
 		for (int y = 0; y < Rows; y++)
@@ -117,11 +123,31 @@ void ImageAbsSubtract(Mat* Result, Mat* Image1, Mat* Image2, char mode) //Result
 				Result->data[y*Cols + x] = 255;
 			else
 				Result->data[y*Cols + x] = 0;
-
-
-
 		}
 	}
+	*/
+
+	memobj_Result = clCreateBuffer(context, CL_DEVICE_TYPE_DEFAULT, Memory_Size, NULL, &ret);
+	memobj_Image1 = clCreateBuffer(context, CL_DEVICE_TYPE_DEFAULT, Memory_Size, NULL, &ret);
+	memobj_Image2 = clCreateBuffer(context, CL_DEVICE_TYPE_DEFAULT, Memory_Size, NULL, &ret);
+
+	ret = clEnqueueWriteBuffer(command_queue, memobj_Result, CL_TRUE, 0, Memory_Size, Result->data, 0, NULL, NULL);
+	ret = clEnqueueWriteBuffer(command_queue, memobj_Image1, CL_TRUE, 0, Memory_Size, Image1->data, 0, NULL, NULL);
+	ret = clEnqueueWriteBuffer(command_queue, memobj_Image2, CL_TRUE, 0, Memory_Size, Image2->data, 0, NULL, NULL);
+
+	//Argument 전달 
+	ret = clSetKernelArg(kernel_ImageAbsSubtract, 0, sizeof(cl_mem), (void*)&memobj_Result);
+	ret = clSetKernelArg(kernel_ImageAbsSubtract, 1, sizeof(cl_mem), (void*)&memobj_Image1);
+	ret = clSetKernelArg(kernel_ImageAbsSubtract, 2, sizeof(cl_mem), (void*)&memobj_Image2);
+
+	//커널 실행
+	ret = clEnqueueNDRangeKernel(command_queue, kernel_ImageAbsSubtract, 1, NULL, &global_work_size, &local_work_size, 0, NULL, NULL);
+
+	if (ret)
+		ret += 1;
+	//메모리 버퍼로부터 결과를 얻음 (Background Model만)
+	ret = clEnqueueReadBuffer(command_queue, memobj_Result, CL_TRUE, 0, Memory_Size, Result->data, 0, NULL, NULL);
+
 
 
 }

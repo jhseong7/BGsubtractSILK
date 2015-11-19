@@ -9,6 +9,12 @@
 #include <fstream>
 #include <ctime>
 #include <opencv2\core\ocl.hpp>
+#include "OpenCL.h"
+
+#include <Windows.h>
+#include <io.h>
+#include <cstdlib>
+#include <fcntl.h>
 
 //-----------------------------------------------------------------------------
 //Define
@@ -17,7 +23,7 @@
 #define WEBCAM_MODE false
 #define WEBCAM_NUMBER 2
 
-#define FRAMESKIP_NO 2
+#define FRAMESKIP_NO 1
 
 #define FILESAVE_MODE_EN false
 
@@ -26,6 +32,13 @@
 
 #define READ_VIDEO_FOLDER "Input/"
 #define READ_VIDEO_NAME "재성개그걸음.MOV"
+
+//OpenCV
+#define MEM_SIZE (128)
+#define MAX_SOURCE_SIZE 0x1000000
+
+//Performance Tick
+#define TickCount(a) QueryPerformanceCounter(a)
 
 //-----------------------------------------------------------------------------
 // Global variables
@@ -70,6 +83,9 @@ cv::Mat Silhouette_SILK;
 cv::Mat Silhouette_Track;
 cv::Mat ContourImages;
 
+cv::UMat CL_Current_Frame;
+cv::UMat CL_Background_Frame;
+
 int Rows, Cols;
 int frame_no = 0;
 
@@ -82,11 +98,57 @@ string SavePath1, SavePath2, SavePath3, SavePath4;
 
 //Shadow Map
 Mat HSV_Image, HSV_Background;
-Mat HSV_Split[3], HSV_Background_Split[3];
 
+//OpenCL 변수들
+
+cl_device_id device_id = NULL;
+cl_context context = NULL;
+cl_command_queue command_queue = NULL;
+cl_mem memobj_kernel_BG_Model = NULL;
+cl_program program = NULL;
+cl_kernel kernel_BG_Model = NULL;
+cl_kernel kernel_ImageAbsSubtract = NULL;
+cl_platform_id platform_id = NULL;
+cl_uint ret_num_devices;
+cl_uint ret_num_platforms;
+cl_int ret;
+
+
+size_t global_work_size = 0;
+size_t local_work_size = 128;
+
+//수행시간 측정용 함수	
+LARGE_INTEGER SILK_Count1, SILK_Count2, liFrequency;
+LARGE_INTEGER ShadowMap_Count1, ShadowMap_Count2;
+LARGE_INTEGER ImageSub_Count1, ImageSub_Count2;
+LARGE_INTEGER Contour_Count1, Contour_Count2;
+
+void SetStdOutToNewConsole()
+{
+	int hConHandle;
+	long lStdHandle;
+	FILE *fp;
+
+	// Allocate a console for this app
+	AllocConsole();
+
+	// Redirect unbuffered STDOUT to the console
+	lStdHandle = (long)GetStdHandle(STD_OUTPUT_HANDLE);
+	hConHandle = _open_osfhandle(lStdHandle, _O_TEXT);
+	fp = _fdopen(hConHandle, "w");
+	*stdout = *fp;
+
+	setvbuf(stdout, NULL, _IONBF, 0);
+}
+
+double Calc_ProcessTime(LARGE_INTEGER Count1, LARGE_INTEGER Count2)
+{
+	return 1000 * (double)(Count2.QuadPart - Count1.QuadPart) / (double)liFrequency.QuadPart;
+}
 
 using namespace std;
 using namespace cv;
+
 
 VOID DetectMotion()
 {
@@ -268,6 +330,8 @@ HRESULT InitD3D( HWND hWnd )
 	return S_OK;
 }
 
+
+
 VOID Cleanup()
 {
 	delete g_pLearnBackground;
@@ -392,11 +456,11 @@ void InitOpenCVModules() //OPENCV 데이터들의 초기화
 		Rows = Current_Frame.rows;
 		Cols = Current_Frame.cols;
 
-		Background_Frame = Mat(Rows, Cols, CV_8UC1);
-		Shadow_Map = Mat(Rows, Cols, CV_8UC1);
-		Silhouette_Final = Mat(Rows, Cols, CV_8UC1);
-		Silhouette_SILK = Mat(Rows, Cols, CV_8UC1);
-		ContourImages = Mat(Rows, 2*Cols, CV_8UC3);
+		Background_Frame = Mat::zeros(Rows, Cols, CV_8UC1);
+		Shadow_Map = Mat::zeros(Rows, Cols, CV_8UC1);
+		Silhouette_Final = Mat::zeros(Rows, Cols, CV_8UC1);
+		Silhouette_SILK = Mat::zeros(Rows, Cols, CV_8UC1);
+		ContourImages = Mat::zeros(Rows, 2*Cols, CV_8UC3);
 
 		Current_Frame.copyTo(Background_Frame); //시작하는 루프에서는 배경 = 첫프레임
 	}
@@ -464,6 +528,47 @@ void InitWindows()
 	InitContourWindow();
 	InitShadowMapWindow();
 }
+
+void InitOpenCL()
+{
+	//retrieve decive information
+	ret = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
+	ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 1, &device_id, &ret_num_devices);
+	
+	//Create context
+	context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &ret);
+
+	//Create command queue
+	command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
+
+
+	//Kernel Program Read
+	FILE* fp;
+	char filename[] = "CL_MatProcess.cl";
+	char* source_str;
+	size_t source_size;
+
+	fp = fopen(filename, "r");
+	if (!fp)
+	{
+		fprintf(stderr, "Failed to load kernel. \n");
+		exit(1);
+	}
+
+	source_str = (char*)malloc(MAX_SOURCE_SIZE);
+	source_size = fread(source_str, 1, MAX_SOURCE_SIZE, fp);
+	fclose(fp);
+
+	//Build Program from Source (online compiling)
+	program = clCreateProgramWithSource(context, 1, (const char**)&source_str, (const size_t *)&source_size, &ret);
+
+	ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
+
+	kernel_BG_Model = clCreateKernel(program, "BackgroundModeler", &ret);
+	kernel_ImageAbsSubtract = clCreateKernel(program, "ImageAbsSubtract", &ret);
+
+}
+
 
 int InitDirectX(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, INT)
 {
@@ -538,6 +643,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	//DirectX initialize
 	InitDirectX(hInstance, hPrevInstance, lpCmdLine, 0);
 
+	//OpenCL Initialize
+	InitOpenCL();
+
 	//Windows initialize
 	//InitWindows();
 
@@ -552,6 +660,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	vector<vector<Point>> VectorPointer;
 	Mat ContourData;
 	
+
+	QueryPerformanceFrequency(&liFrequency);
+
+	
+	SetStdOutToNewConsole();
+
+	//-------------------------------------------------------------
+	// 프레임 처리 루프 시작점
+	//--------------------------------------------------------------
 
 	while (1) //Frame Processing Loop Start
 	{
@@ -575,20 +692,36 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 			}
 		}
 		
+
+		TickCount(&SILK_Count1);
+
 		//g_frameRate.isTimeStarted();
 		g_data.LoadNextFrame(1);
 		g_pLearnBackground->SwapBuffer();
 		Render(hWnd);
 
+		TickCount(&SILK_Count2);
+
+		TickCount(&ShadowMap_Count1);
+
+		Current_Frame.copyTo(CL_Current_Frame);
+		Background_Frame.copyTo(CL_Background_Frame);
+
+		TickCount(&ShadowMap_Count1);
+
 		ShadowMapCreator(&Shadow_Map, &Current_Frame, &Background_Frame);
 		ImageAbsSubtract(&Silhouette_Final, &Silhouette_SILK, &Shadow_Map, 1);
 		
+		TickCount(&ShadowMap_Count2);
+
 		if (FILESAVE_MODE_EN)
 		{
 			ostringstream Save1;
 			Save1 << SavePath1 << std::setfill('0') << std::setw(5) << frame_no << ".jpg";
 			imwrite(Save1.str(), Silhouette_Final);
 		}
+
+	
 
 		Mat Longest_Contour;
 
@@ -611,10 +744,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		//imshow("Projection", Projection);
 		//imshow("Contour data", ContourData);
 		//imshow("Silhouette Track", Silhouette_Track);
-		imshow("Input", Current_Frame);
-		//imshow("Shadow Map", Shadow_Map);
-		//imshow("Silhouette SILK", Silhouette_SILK);
-		imshow("Silhouette Final", Silhouette_Final);
+
 
 
 
@@ -636,7 +766,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 		if (!CheckEmpty(&Longest_Contour))
 		{
-
+			TickCount(&Contour_Count1);
 			
 			//Silhouette screen using contour length
 			
@@ -653,6 +783,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 			refer_point = Find_refer_point(contour_point_array);
 			Segment = Resampling(&contour_point_array, &refer_point);
 			Resampled_image_array = Draw_Resampling(Segment, Contour_out_image_array);
+
+			TickCount(&Contour_Count2);
 
 			if (FILESAVE_MODE_EN)
 			{
@@ -671,18 +803,29 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 			imshow("Contour_image", Contour_out_image_array);
 			imshow("Resampling_image", Resampled_image_array);
 
-			//ShowSteadyContour(&ContourImages, &Contour_out_image_array, &Resampled_image_array);
-			//imshow("Contour Images", ContourImages);
-			//resizeWindow("Contour_image", Cols / 2, Rows);
-			//resizeWindow("Resampling_image", Cols / 2, Rows);
 		}
 
 		//---------------------------------------------------------------//
 		//     Preproccesing END (Feature Extraction)                    //
 		//---------------------------------------------------------------//
 
+		double Silk_ms, Shadow_ms, Count_ms;
+
+		Silk_ms = Calc_ProcessTime(SILK_Count1, SILK_Count2);
+		Shadow_ms = Calc_ProcessTime(ShadowMap_Count1, ShadowMap_Count2);
+		Count_ms = Calc_ProcessTime(Contour_Count1, Contour_Count2);
+
+		
+
+		cout << "Silk: " << Silk_ms << ", Shadow: " << Shadow_ms << ", Contour: " << Count_ms << endl;
+
+
+		imshow("Input", Current_Frame);
+		imshow("Silhouette Final", Silhouette_Final);
+
+
 		//Arrange Windows
-		MoveWindow(hWnd, 3*Cols, 0, Cols, Rows, false); //일단 치우자
+		MoveWindow(hWnd, 2*Cols, 0, Cols, Rows, false); //일단 치우자
 
 		cv::moveWindow("Silhouette Final", 0 + Cols, 0);
 		cv::moveWindow("Input", 0, 0);
@@ -692,7 +835,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		if (waitKey(1) == 27) //ESC키로 종료 
 			break;
 
-		Current_Frame.release();
+		//OpenCl test
+
+
+		//Current_Frame.release();
 	}
 	
 	//Writer.release();

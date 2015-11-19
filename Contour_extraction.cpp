@@ -50,7 +50,7 @@ Mat Erosion( int erosion_elem, int erosion_size, Mat input_image, void* )
 	  else if( erosion_elem  == 1 ){ erosion_type = MORPH_CROSS; }
 	  else if( erosion_elem  == 2) { erosion_type = MORPH_ELLIPSE; }
 
-	  Mat element = getStructuringElement( erosion_type,Size( 2*erosion_size + 1, 2*erosion_size+1 ),Point( erosion_size, erosion_size ) );
+	  static Mat element = getStructuringElement( erosion_type,Size( 2*erosion_size + 1, 2*erosion_size+1 ),Point( erosion_size, erosion_size ) );
 	  Mat out_image;
 
 	  /// Apply the erosion operation
@@ -67,7 +67,7 @@ Mat Dilation( int dilation_elem, int dilation_size, Mat input_image,  void* )
 	  else if( dilation_elem == 1 ){ dilation_type = MORPH_CROSS; }
 	  else if( dilation_elem == 2) { dilation_type = MORPH_ELLIPSE; }
 
-	  Mat element = getStructuringElement( dilation_type,Size( 2*dilation_size + 1, 2*dilation_size+1 ),Point( dilation_size, dilation_size ) );
+	  static Mat element = getStructuringElement(dilation_type, Size(2 * dilation_size + 1, 2 * dilation_size + 1), Point(dilation_size, dilation_size));
 	  Mat out_image;	  
 
 	  /// Apply the dilation operation

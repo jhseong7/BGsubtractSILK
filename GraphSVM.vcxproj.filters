@@ -25,6 +25,13 @@
     <Filter Include="Header Files\Feature Extraction">
       <UniqueIdentifier>{21b06c94-9d8f-4621-94aa-5e25f5cb50de}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\OpenCL">
+      <UniqueIdentifier>{11aacac2-e7a3-447e-a3dc-fef8bb492090}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OpenCL Files">
+      <UniqueIdentifier>{D011BB44-1BF7-4113-997B-A081035B40D8}</UniqueIdentifier>
+      <Extensions>cl</Extensions>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CV_ImageSum.cpp">
@@ -146,6 +153,9 @@
     <ClInclude Include="temp.hpp">
       <Filter>Header Files\Feature Extraction</Filter>
     </ClInclude>
+    <ClInclude Include="OpenCL.h">
+      <Filter>Header Files\OpenCL</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\evaluate_motionmask.psh">
@@ -160,5 +170,10 @@
     <None Include="shaders\learn_weight.psh">
       <Filter>Resource Files</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Intel_OpenCL_Build_Rules Include="CL_MatProcess.cl">
+      <Filter>OpenCL Files</Filter>
+    </Intel_OpenCL_Build_Rules>
   </ItemGroup>
 </Project>

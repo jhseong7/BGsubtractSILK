@@ -38,6 +38,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\IntelOpenCL.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -56,16 +57,16 @@
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(DXSDK_DIR)Include;C:\opencv\build\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(DXSDK_DIR)Lib\x86;C:\opencv\build\x86\vc12\lib;C:\opencv\build\x86\vc12\staticlib;C:\opencv\build\x86\vc12\bin;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(INTELOCLSDKROOT)include;$(DXSDK_DIR)Include;C:\opencv\build\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(DXSDK_DIR)Lib\x86;C:\opencv\build\x86\vc12\lib;C:\opencv\build\x86\vc12\staticlib;C:\opencv\build\x86\vc12\bin;$(INTELOCLSDKROOT)bin\x86;$(LibraryPath)</LibraryPath>
     <SourcePath>C:\opencv\sources;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OPENCV and DirectX|Win32'">
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(DXSDK_DIR)Include;C:\opencv\build\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(DXSDK_DIR)Lib\x86;C:\opencv\build\x86\vc12\lib;C:\opencv\build\x86\vc12\staticlib;C:\opencv\build\x86\vc12\bin;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(DXSDK_DIR)Include;C:\opencv\build\include;$(INTELOCLSDKROOT)include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(DXSDK_DIR)Lib\x86;C:\opencv\build\x86\vc12\lib;C:\opencv\build\x86\vc12\staticlib;C:\opencv\build\x86\vc12\bin;$(INTELOCLSDKROOT)lib\x86;$(LibraryPath)</LibraryPath>
     <SourcePath>C:\opencv\sources;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -83,14 +84,14 @@
       <PrecompiledHeader />
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>C:\opencv\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(INTELOCLSDKROOT)include;C:\opencv\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>winmm.lib;d3d9.lib;d3dx9d.lib;opencv_world300d.lib;opencv_ts300d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>OpenCL.lib;winmm.lib;d3d9.lib;d3dx9d.lib;opencv_world300d.lib;opencv_ts300d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalLibraryDirectories>C:\opencv\build\x86\vc12\lib;C:\opencv\build\x86\vc12\staticlib;C:\opencv\build\x86\vc12\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(INTELOCLSDKROOT)lib\x86;C:\opencv\build\x86\vc12\lib;C:\opencv\build\x86\vc12\staticlib;C:\opencv\build\x86\vc12\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OPENCV and DirectX|Win32'">
@@ -104,15 +105,15 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>C:\opencv\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(INTELOCLSDKROOT)include;C:\opencv\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WholeProgramOptimization>true</WholeProgramOptimization>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>winmm.lib;d3d9.lib;d3dx9.lib;opencv_world300.lib;opencv_ts300.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>OpenCL.lib;winmm.lib;d3d9.lib;d3dx9.lib;opencv_world300.lib;opencv_ts300.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalLibraryDirectories>C:\opencv\build\x86\vc12\lib;C:\opencv\build\x86\vc12\staticlib;C:\opencv\build\x86\vc12\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(INTELOCLSDKROOT)lib\x86;C:\opencv\build\x86\vc12\lib;C:\opencv\build\x86\vc12\staticlib;C:\opencv\build\x86\vc12\bin;$(INTELOCLSDKROOT)lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
@@ -169,6 +170,7 @@
     <ClInclude Include="HSC.hpp" />
     <ClInclude Include="Image_open.h" />
     <ClInclude Include="LearnBackground.h" />
+    <ClInclude Include="OpenCL.h" />
     <ClInclude Include="opencv_essential_include.h" />
     <ClInclude Include="opencv_inc.h" />
     <ClInclude Include="PushRelabel.h" />
@@ -184,7 +186,11 @@
     <None Include="shaders\learn_sorting.psh" />
     <None Include="shaders\learn_weight.psh" />
   </ItemGroup>
+  <ItemGroup>
+    <Intel_OpenCL_Build_Rules Include="CL_MatProcess.cl" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\IntelOpenCL.targets" />
   </ImportGroup>
 </Project>
