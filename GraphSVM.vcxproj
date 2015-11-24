@@ -141,6 +141,7 @@
     <ClCompile Include="Cutting_silhouette_area.cpp" />
     <ClCompile Include="CV_ImageSum.cpp" />
     <ClCompile Include="CV_Kalman.cpp" />
+    <ClCompile Include="CV_MOG.cpp" />
     <ClCompile Include="DataMotion.cpp" />
     <ClCompile Include="EvaluateMask.cpp" />
     <ClCompile Include="Find_refer_point.cpp" />

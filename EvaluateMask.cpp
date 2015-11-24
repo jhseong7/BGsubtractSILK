@@ -92,7 +92,7 @@ void EvaluateMask::ShowGraphCutsResult( LPDIRECT3DTEXTURE9 texScore,
 
 	g_pd3dDevice->SetRenderTarget( 0, surfDisplay );
 	{
-		g_pd3dDevice->SetTexture( 0, texScore );
+		//g_pd3dDevice->SetTexture( 0, texScore );
 		g_pd3dDevice->SetTexture( 1, texGraph );
 		g_pd3dDevice->SetPixelShader( m_shViewGraph );
 
@@ -110,11 +110,12 @@ void EvaluateMask::ShowGraphCutsResult( LPDIRECT3DTEXTURE9 texScore,
 	}
 
 
-	g_pd3dDevice->SetTexture( 1, 0 );
+	//g_pd3dDevice->SetTexture( 1, 0 );
 
 
-
+	//D3DXSaveTextureToFile("Texture.bmp", D3DXIFF_BMP, texGraph, NULL);
 //D3DXSaveSurfaceToFile( "display.bmp", D3DXIFF_BMP, surfDisplay, NULL, NULL );
+
 }
 
 void EvaluateMask::ShowDynamicProgResult( LPDIRECT3DTEXTURE9 texNodeScore,

@@ -23,9 +23,11 @@
 #define WEBCAM_MODE false
 #define WEBCAM_NUMBER 2
 
-#define FRAMESKIP_NO 1
+#define FRAMESKIP_NO 0
 
 #define FILESAVE_MODE_EN false
+
+#define FAST_MODE true
 
 #define MORPH_STRUCT_SIZE_X 1
 #define MORPH_STRUCT_SIZE_Y 4
@@ -118,10 +120,12 @@ size_t global_work_size = 0;
 size_t local_work_size = 128;
 
 //수행시간 측정용 함수	
-LARGE_INTEGER SILK_Count1, SILK_Count2, liFrequency;
+LARGE_INTEGER SILK_Count1, SILK_Count2, SILK_Count_mid, liFrequency;
 LARGE_INTEGER ShadowMap_Count1, ShadowMap_Count2;
 LARGE_INTEGER ImageSub_Count1, ImageSub_Count2;
 LARGE_INTEGER Contour_Count1, Contour_Count2;
+
+LARGE_INTEGER SILK_Process_Count1, SILK_Process_Count2, SILK_Process_Count3, SILK_Process_Count4, SILK_Process_Count5, SILK_Process_Count6;
 
 void SetStdOutToNewConsole()
 {
@@ -165,24 +169,29 @@ VOID DetectMotion()
 	g_pLearnBackground->UpdateMemory( g_rDamping );
 }
 
-VOID Render( HWND hWnd )
+VOID Render( )
 {
 	if( NULL == g_pd3dDevice )
 		return;
 
-	cv::Mat ImageData(g_data.m_nWidth, g_data.m_nHeight, CV_8UC4);
+	static cv::Mat ImageData(g_data.m_nWidth, g_data.m_nHeight, CV_8UC4);
 
-	LPDIRECT3DSURFACE9 pSurfOldRenderTarget = NULL;
-	std::ostringstream strbuff;
-	strbuff << "Frame: " << g_data.m_nCurFrame << ", Pulse=" << g_nPulseStep;
+	static LPDIRECT3DSURFACE9 pSurfOldRenderTarget = NULL;
+	//std::ostringstream strbuff;
+	//strbuff << "Frame: " << g_data.m_nCurFrame << ", Pulse=" << g_nPulseStep;
 
 	if( SUCCEEDED( g_pd3dDevice->BeginScene() ) )
 	{
+		TickCount(&SILK_Process_Count1);
+
 		g_pd3dDevice->Clear( 0, NULL, D3DCLEAR_TARGET, 0xFFFFFF, 1, 0 );
 		g_pd3dDevice->GetRenderTarget( 0, &pSurfOldRenderTarget );
 		DetectMotion();
 
-		if ( g_data.m_texTruth!=NULL )
+		TickCount(&SILK_Process_Count2);
+
+		/*
+		if (0) //g_data.m_texTruth!=NULL )
 		{
 			float true_pos, true_neg, false_pos, false_neg;
 			g_pEvaluateMask->EvaluateMotionMask
@@ -195,13 +204,13 @@ VOID Render( HWND hWnd )
 				<< false_pos/(false_pos+true_neg) << '\t'
 				<< true_pos/(true_pos+false_neg) << std::endl;
 		}
-
+		*/
 
 		g_pEvaluateMask->ShowGraphCutsResult                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
 			( g_pLearnBackground->GetScoreTex(), g_pPushRelabel->GetExcessTex(),
 			g_nPulseStep/2, pSurfOldRenderTarget );
 				
-
+		TickCount(&SILK_Process_Count3);
 		
 		//D3DXSaveSurfaceToFileA("Current_Map.bmp", D3DXIFF_BMP, pSurfOldRenderTarget, NULL, NULL);
 		//D3DXSaveTextureToFile("Current_Map.bmp", D3DXIFF_BMP, pTexture, NULL);
@@ -209,24 +218,55 @@ VOID Render( HWND hWnd )
 		//	true, g_nPulseStep / 2 / 255.f, pSurfOldRenderTarget);
 	
 	
-		LPDIRECT3DSURFACE9 CV_CopySurface = NULL;
-		D3DLOCKED_RECT CV_SurfRect;
+		static LPDIRECT3DSURFACE9 CV_CopySurface = NULL;
+		static D3DLOCKED_RECT CV_SurfRect;
 		::ZeroMemory(&CV_SurfRect, sizeof(D3DLOCKED_RECT));
 
+		D3DLOCKED_RECT CV_SurfRect2;
+		::ZeroMemory(&CV_SurfRect2, sizeof(D3DLOCKED_RECT));
 
-		D3DSURFACE_DESC pDesc;
+		static D3DSURFACE_DESC pDesc;
+		
+		//LPDIRECT3DTEXTURE9 Graph = g_pPushRelabel->GetExcessTex();
+		//D3DXSaveTextureToFile("Text.bmp", D3DXIFF_BMP, Graph, NULL);
 
+		
 		pSurfOldRenderTarget->GetDesc(&pDesc);
 		pSurfOldRenderTarget->Release();
 		HANDLE *handle = NULL;
+
+		
 
 		HRESULT cc = g_pd3dDevice->CreateOffscreenPlainSurface(pDesc.Width, pDesc.Height, pDesc.Format, D3DPOOL_SYSTEMMEM, &CV_CopySurface, NULL);
 		//HRESULT locked = CV_CopySurface->LockRect(&CV_SurfRect, NULL, 0);
 		//HRESULT back = g_pd3dDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &CV_CopySurface);
 
+		static RECT rectangle = { 0, 0, Cols, Rows };
+
 
 		HRESULT gettarget = g_pd3dDevice->GetRenderTargetData(pSurfOldRenderTarget, CV_CopySurface);
-		HRESULT locked = CV_CopySurface->LockRect(&CV_SurfRect, NULL, 0);
+
+		//HRESULT gettarget = D3DXLoadSurfaceFromSurface(CV_CopySurface, NULL, NULL, pSurfOldRenderTarget, NULL, NULL, D3DX_DEFAULT, 0);
+
+		//LPDIRECT3DTEXTURE9 Graph = g_pPushRelabel->GetExcessTex();
+		//LPDIRECT3DTEXTURE9 CV_Texture = NULL;
+
+		//gettarget = D3DXCreateTexture(g_pd3dDevice, Cols, Rows, 1, 0, D3DFMT_X8R8G8B8, D3DPOOL_SYSTEMMEM, &CV_Texture);
+
+		//gettarget = CV_Texture->GetSurfaceLevel(0, &CV_CopySurface);
+
+
+		TickCount(&SILK_Process_Count4);
+
+		HRESULT locked = CV_CopySurface->LockRect(&CV_SurfRect, &rectangle, D3DLOCK_NO_DIRTY_UPDATE | D3DLOCK_READONLY);
+
+		
+		//locked = CV_Texture->LockRect(0, &CV_SurfRect2, &rectangle, 0);
+		//locked = Graph->LockRect(0, &CV_SurfRect2, &rectangle, 0);
+		//gettarget = CV_Texture->GetSurfaceLevel(0, &CV_CopySurface);
+
+
+		TickCount(&SILK_Process_Count5);
 
 		static int framestep_y = Silhouette_SILK.step[0];
 		static int framestep_x = Silhouette_SILK.step[1];
@@ -234,14 +274,15 @@ VOID Render( HWND hWnd )
 		static int m_nHeight = Silhouette_SILK.rows;
 
 		BYTE *SurfacePtr = (BYTE*)(CV_SurfRect.pBits);
+		//BYTE *SurfacePtr2 = (BYTE*)(CV_SurfRect2.pBits);
 		
 		for (int x = 0; x < m_nWidth; x++)
 		{
 			for (int y = 0; y < m_nHeight; y++)
 			{
-				BYTE bdata = SurfacePtr[y * 4 * m_nWidth + x * 4 + 0];
-				BYTE gdata = SurfacePtr[y * 4 * m_nWidth + x * 4 + 1];
-				BYTE rdata = SurfacePtr[y * 4 * m_nWidth + x * 4 + 2];
+				//BYTE bdata = SurfacePtr[y * 4 * m_nWidth + x * 4 + 0];
+				//BYTE gdata = SurfacePtr[y * 4 * m_nWidth + x * 4 + 1];
+				//BYTE rdata = SurfacePtr[y * 4 * m_nWidth + x * 4 + 2];
 
 				Silhouette_SILK.data[y*framestep_y + x*framestep_x + 0] = SurfacePtr[y * 4 * m_nWidth + x * 4 + 0];
 
@@ -249,17 +290,23 @@ VOID Render( HWND hWnd )
 		}
 
 		CV_CopySurface->UnlockRect();
+		//Graph->UnlockRect(0);
+		//CV_Texture->UnlockRect(0);
 		SAFE_RELEASE(CV_CopySurface);
+		
+		TickCount(&SILK_Process_Count6);
 	}
 	HRESULT failss = g_pd3dDevice->EndScene();
 	SAFE_RELEASE( pSurfOldRenderTarget );
 
-	g_pd3dDevice->Present( NULL, NULL, NULL, NULL );
+	//g_pd3dDevice->Present( NULL, NULL, NULL, NULL );
 
+	/*
 	if ( g_frameRate.updateFrameRate() )
 		SetWindowText( hWnd, g_frameRate.getFrameRateText().c_str() );
 	else if ( ! g_frameRate.isTimeStarted() )
 		SetWindowText( hWnd, strbuff.str().c_str() );
+		*/
 }
 
 void SaveScreen()
@@ -352,7 +399,7 @@ LRESULT WINAPI MsgProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
 			break;
 
 		case WM_PAINT:
-			Render(hWnd);
+			Render();
 			ValidateRect( hWnd, NULL );
 			break;
 
@@ -383,7 +430,7 @@ LRESULT WINAPI MsgProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
 				if ( g_data.LoadNextFrame(-1) )
 				{
 					g_pLearnBackground->SwapBuffer();
-					Render( hWnd );
+					Render(  );
 				}
 				break;
 			case VK_DOWN :
@@ -391,7 +438,7 @@ LRESULT WINAPI MsgProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
 				if ( g_data.LoadNextFrame(1) )
 				{
 					g_pLearnBackground->SwapBuffer();
-					Render( hWnd );
+					Render(  );
 				}
 				break;
 			}
@@ -676,7 +723,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 		if (WEBCAM_MODE) //웹캠 모드인지 아닌지를 판별용 조건문
 		{
-			camera >> Current_Frame;                                                                                                        
+			camera >> Current_Frame;
 		}
 
 		else
@@ -691,28 +738,42 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 				}
 			}
 		}
-		
 
-		TickCount(&SILK_Count1);
 
-		//g_frameRate.isTimeStarted();
-		g_data.LoadNextFrame(1);
-		g_pLearnBackground->SwapBuffer();
-		Render(hWnd);
+		if (FAST_MODE)
+		{
+			TickCount(&ShadowMap_Count1);
+			CL_Current_Frame = Current_Frame.getUMat(ACCESS_READ);
+			//CL_Background_Frame = Background_Frame.getUMat(ACCESS_RW);
+			FastBGSubtract();
+			TickCount(&ShadowMap_Count2);
+		}
 
-		TickCount(&SILK_Count2);
+		else
+		{
+			TickCount(&SILK_Count1);
 
-		TickCount(&ShadowMap_Count1);
+			g_data.LoadNextFrame(1);
+			g_pLearnBackground->SwapBuffer();
 
-		Current_Frame.copyTo(CL_Current_Frame);
-		Background_Frame.copyTo(CL_Background_Frame);
+			TickCount(&SILK_Count_mid);
 
-		TickCount(&ShadowMap_Count1);
+			Render();
 
-		ShadowMapCreator(&Shadow_Map, &Current_Frame, &Background_Frame);
-		ImageAbsSubtract(&Silhouette_Final, &Silhouette_SILK, &Shadow_Map, 1);
-		
-		TickCount(&ShadowMap_Count2);
+			TickCount(&SILK_Count2);
+
+			TickCount(&ShadowMap_Count1);
+
+			CL_Current_Frame = Current_Frame.getUMat(ACCESS_READ);
+			CL_Background_Frame = Background_Frame.getUMat(ACCESS_RW);
+
+
+			ShadowMapCreator(&Shadow_Map, &Current_Frame, &Background_Frame);
+			ImageAbsSubtract(&Silhouette_Final, &Silhouette_SILK, &Shadow_Map, 1);
+
+			TickCount(&ShadowMap_Count2);
+		}
+
 
 		if (FILESAVE_MODE_EN)
 		{
@@ -809,20 +870,29 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		//     Preproccesing END (Feature Extraction)                    //
 		//---------------------------------------------------------------//
 
-		double Silk_ms, Shadow_ms, Count_ms;
+		double Silk_ms, SILK_Mid, Shadow_ms, Count_ms;
+		double SILK_Proc1, SILK_Proc2, SILK_Proc3, SILK_Proc4, SILK_Proc5;
 
-		Silk_ms = Calc_ProcessTime(SILK_Count1, SILK_Count2);
+
+		SILK_Mid = Calc_ProcessTime(SILK_Count1, SILK_Count_mid);
+		Silk_ms = Calc_ProcessTime(SILK_Count_mid, SILK_Count2);
 		Shadow_ms = Calc_ProcessTime(ShadowMap_Count1, ShadowMap_Count2);
 		Count_ms = Calc_ProcessTime(Contour_Count1, Contour_Count2);
 
+		SILK_Proc1 = Calc_ProcessTime(SILK_Process_Count1, SILK_Process_Count2);
+		SILK_Proc2 = Calc_ProcessTime(SILK_Process_Count2, SILK_Process_Count3);
+		SILK_Proc3 = Calc_ProcessTime(SILK_Process_Count3, SILK_Process_Count4);
+		SILK_Proc4 = Calc_ProcessTime(SILK_Process_Count4, SILK_Process_Count5);
+		SILK_Proc5 = Calc_ProcessTime(SILK_Process_Count5, SILK_Process_Count6);
 		
 
-		cout << "Silk: " << Silk_ms << ", Shadow: " << Shadow_ms << ", Contour: " << Count_ms << endl;
+		cout << "Silk Load: " << SILK_Mid << ", Silk Process:" << Silk_ms << ", Shadow : " << Shadow_ms << ", Contour : " << Count_ms << endl;
 
+		cout << "SILK Proc1: " << SILK_Proc1 << " SILK Proc2: " << SILK_Proc2 << " SILK Proc3: " << SILK_Proc3 << " SILK Proc4: " << SILK_Proc4 << " SILK Proc5: " << SILK_Proc5 << endl;
 
 		imshow("Input", Current_Frame);
 		imshow("Silhouette Final", Silhouette_Final);
-
+		//imshow("MOG", BackgroundMOG);
 
 		//Arrange Windows
 		MoveWindow(hWnd, 2*Cols, 0, Cols, Rows, false); //일단 치우자

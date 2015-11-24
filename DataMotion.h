@@ -48,6 +48,10 @@ bool CheckEmpty(Mat* Input_Image);
 void ShowSteadyContour(Mat* Output_Image, Mat* BW_Contour, Mat* Resize_Points);
 void ImageAbsSubtract(Mat* Result, Mat* Image1, Mat* Image2, char mode);
 
+//fast BGsub
+void FastBGSubtract(void);
+
+
 //Contour
 Mat contour(Mat* input_image, vector<vector<Point> >* contour_vector);
 void ContourBasedFilter(Mat* output_image, Mat* input_image);

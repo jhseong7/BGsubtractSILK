@@ -91,6 +91,9 @@
     <ClCompile Include="Weight_cal.cpp">
       <Filter>Source Files\Feature Extraction</Filter>
     </ClCompile>
+    <ClCompile Include="CV_MOG.cpp">
+      <Filter>Source Files\Background Subtraction</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CV_Kalman.h">

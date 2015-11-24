@@ -97,7 +97,7 @@ Mat Make_contour(Mat* input_image,vector<Point>* input_vector)
         length = arcLength(contours[i], 1);
 		if (length > trackbarposition )
         {
-            cout << contours[i] << endl;
+            //cout << contours[i] << endl;
             drawContours(drawing,contours,i,color,1,8,hierarchy,2,Point());
 		}
 

@@ -67,21 +67,21 @@ vector<vector<Point> > Resampling(vector<Point>* input_contour, vector<Point>* r
         index1 = (int)k*Seg1_inter_length;
         Segment1[k] = Head_start_contour[index1];
         temp = Segment1[k];
-        cout << index1 << ":" << temp << endl;
+        //cout << index1 << ":" << temp << endl;
     }
     for(k=0;k<Seg2_sample_point;k++)
     {
         index2 = Seg1_length + (int)k*Seg2_inter_length;
         Segment2[k] = Head_start_contour[index2];
         temp = Segment2[k];
-        cout << index2 << ":" << temp << endl;
+       // cout << index2 << ":" << temp << endl;
     }
     for(k=0;k<Seg3_sample_point;k++)
     {
         index3 = (Seg1_length+Seg2_length) + (int)k*Seg3_inter_length;
         Segment3[k] = Head_start_contour[index3];
         temp = Segment3[k];
-        cout << index3 << ":" << temp << endl;
+       // cout << index3 << ":" << temp << endl;
     }
     
     result.push_back(Segment1);    result.push_back(Segment2);    result.push_back(Segment3);
